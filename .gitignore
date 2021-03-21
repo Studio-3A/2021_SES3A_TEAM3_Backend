@@ -1,3 +1,6 @@
+# Firebase Admin Service Account
+src/config/serviceAccountKey.json
+
 # Logs
 logs
 *.log

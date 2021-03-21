@@ -1,4 +1,4 @@
-// Remember to get the serviceAccountKey.json file from Teams as it should be be commited to GitHub
+// Remember to get the serviceAccountKey.json file from Teams as it should not be commited to GitHub
 
 import FirebaseAdmin, { ServiceAccount } from "firebase-admin";
 import serviceAccount from "./config/serviceAccountKey.json";

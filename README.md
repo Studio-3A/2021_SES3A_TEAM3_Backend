@@ -18,7 +18,7 @@ Within the root directory of the repo, run the command `npm install` to install 
 
 ## Running the API locally
 
-Run the command: `npm start dev`.
+Run the command: `npm run dev`.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

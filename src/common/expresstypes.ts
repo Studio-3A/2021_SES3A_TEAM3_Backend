@@ -21,3 +21,25 @@ export enum StatusCode {
     InternalServerError = 500,
     NotImplemented = 501
 }
+
+export const statusCodeIsSuccessful = (code: number) => {
+    switch (code) {
+        case StatusCode.OK:
+        case StatusCode.Created:
+        case StatusCode.NoContent:
+            return true;
+        default:
+            return false;
+    }
+}
+
+export interface ErrorResponse {
+    status: StatusCode;
+    errorMessage?: string;
+    error?: any; // yeah idk what type this is going to be... ¯\_(ツ)_/¯
+}
+
+export function responseIsErrorResponse(resp: any): resp is ErrorResponse {
+    const r = resp as Partial<ErrorResponse>
+    return r.status != null && !statusCodeIsSuccessful(r.status);
+}

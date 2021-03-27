@@ -1,32 +1,23 @@
 import keys from './keys.json';
+import { WeatherDataResponse, WeatherLongLatInput, WeatherLocationInput } from "./weatherbitTypes";
+import { getContent } from "./utility";
+
+const weatherbitUrl: string = 'https://api.weatherbit.io/v2.0/forecast/daily';
 
 const getWeatherForecast = async (params: string) => {
-  const url: string = 'https://api.weatherbit.io/v2.0/forecast/daily';
-  const forecastData: JSON = await fetch(`${url}?${params}`).then((resp) =>
-    resp.json()
-  );
-  return forecastData;
+  return await getContent<WeatherDataResponse>(`${weatherbitUrl}?${params}`, "Getting the weather failed.");
 };
 
 //Example: getWeatherForecastByLocation("New York", "US", 7);
-const getWeatherForecastByLocation = (
-  city: string,
-  country: string,
-  days: number
-) => {
+export const getWeatherForecastByLocation = (location: WeatherLocationInput) => {
   return getWeatherForecast(
-    `key=${keys.weatherbit}&city=${city}&country=${country}&days=${days}`
+    `key=${keys.weatherbit}&city=${location.city}&country=${location.country}&days=${location.days}`
   );
 };
 
 //Example: getWeatherForecastByLongLat(-78.543, 38.123)
-const getWeatherForecastByLongLat = (longitude: number, latitude: number) => {
+export const getWeatherForecastByLongLat = (longLat: WeatherLongLatInput) => {
   return getWeatherForecast(
-    `key=${keys.weatherbit}&lat=${latitude}&lon=${longitude}`
+    `key=${keys.weatherbit}&lat=${longLat.latitude}&lon=${longLat.longitude}`
   );
-};
-
-export default {
-  getWeatherForecastByLocation,
-  getWeatherForecastByLongLat,
 };

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import FirebaseAdmin from "../../authentication";
 import { StatusCode } from "../../common/expresstypes";
 
@@ -6,8 +6,8 @@ export const authRouter = express.Router({
     strict: true
 });
 
-authRouter.post("/checkToken", async (req: any, res: any) => {
-    const { token }: { token: string } = req.body;
+authRouter.post("/checkToken", async (req: Request<unknown, unknown, string, unknown>, res: Response) => {
+    const token: string = req.body;
     let statusCode = StatusCode.Unauthorized, isAuth = false, error: any, uid;
 
     if (token) {

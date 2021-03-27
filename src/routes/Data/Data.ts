@@ -1,26 +1,19 @@
 import express, { Request, Response } from 'express';
-import location from '../../apiFetchers/location';
+import { getWeatherForecastByLocation, getWeatherForecastByLongLat } from '../../apiFetchers/location';
+import { WeatherDataResponse, WeatherLocationInput, WeatherLongLatInput } from '../../apiFetchers/weatherbitTypes';
 
 export const dataRouter = express.Router({
   strict: true,
 });
 
-//remove this comment later: before you get mad about the "any", I spent ages trying to get it working with a more explicit type...
-dataRouter.get('/weather/location', async (req: Request, res: Response) => {
-  const { city, country, days }: any = req.query;
-  const forecastData: JSON = await location.getWeatherForecastByLocation(
-    city,
-    country,
-    days
-  );
+dataRouter.get('/weather/location', async (req: Request<unknown, unknown, unknown, WeatherLocationInput>, res: Response) => {
+  const locationInput: WeatherLocationInput = req.query;
+  const forecastData = await getWeatherForecastByLocation(locationInput);
   res.send(forecastData);
 });
 
-dataRouter.get('/weather/coordinates', async (req: Request, res: Response) => {
-  const { long, lat }: any = req.query;
-  const forecastData: JSON = await location.getWeatherForecastByLongLat(
-    long,
-    lat
-  );
+dataRouter.get('/weather/coordinates', async (req: Request<unknown, unknown, unknown, WeatherLongLatInput>, res: Response) => {
+  const longLatInput: WeatherLongLatInput = req.query;
+  const forecastData = await getWeatherForecastByLongLat(longLatInput);
   res.send(forecastData);
 });

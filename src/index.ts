@@ -14,9 +14,8 @@ app.use(express.json());
 app.get("/", (req, res) => res.send("Hello world!"));
 
 //import api routes below
-app.use("/auth", authRouter)
+app.use("/auth", authRouter);
 app.use("/users", userRouter);
-
 
 // Start the Express server
 app.listen(PORT, () => {

@@ -1,4 +1,4 @@
-import keys from './keys.json';
+import keys from '../config/keys.json';
 import { getContent } from "./utility";
 
 const weatherbitUrl: string = 'https://api.weatherbit.io/v2.0/forecast/daily';

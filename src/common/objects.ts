@@ -89,3 +89,40 @@ export interface Event {
 export interface EventBooking extends Event, Booking {
     eventId: string;
 }
+
+export interface Location {
+    longitude: number;
+    latitude: number;
+    cityName: string;
+    stateCode: string;
+    countryCode: string;
+}
+
+export interface TripGenerationInput {
+    durationInHours: number; // can convert this into # of days if we need
+    beginDate: string;
+    endDate: string;
+    numberOfPeople: number | 1; // defaults to 1
+    budget?: { // if none specified, assume no budget restriction
+        min?: number;
+        max?: number;
+    };
+    // places should not be optional btw
+    places?: Location[]; // assume the first is the start point and the last is the end point
+    modesOfTransport?: string[]; // should be typed: ""
+    activityOptions: {
+        includeIndoor: boolean | true;
+        includeOutdoor: boolean | true;
+        min: number;
+        max: number;
+        activityTypes: string[]; // stuff like: "beach" | "theme park" | "club", etc.
+    },
+    includedDestinationIds?: string[]; // destinations they want to visit - might not need this if places is being used
+    includedVenueIds?: string[]; // venues they want to visit
+    includeHotelIds?: string[]; // hotels they want to visit
+    includeActivityIds?: string[]; // activities they want to do
+    rating?: { // if users want to sort by ratings somehow?
+        min?: number;
+        max?: number;
+    };
+}

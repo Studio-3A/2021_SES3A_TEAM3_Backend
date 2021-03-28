@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getWeatherForecastByLocation, getWeatherForecastByLongLat } from '../../apiFetchers/location';
-import { WeatherDataResponse, WeatherLocationInput, WeatherLongLatInput } from '../../apiFetchers/weatherbitTypes';
+import { getWeatherForecastByLocation, getWeatherForecastByLongLat, WeatherDataResponse, WeatherLocationInput, WeatherLongLatInput } from '../../apiFetchers/weather';
 
 export const dataRouter = express.Router({
   strict: true,

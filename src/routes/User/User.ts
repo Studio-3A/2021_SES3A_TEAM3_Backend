@@ -12,6 +12,9 @@ userRouter.post("/", async (req: Request, res: Response) => {
 userRouter.get("/", (req: Request, res: Response) => {
     userController.read(req, res);
 });
+userRouter.get("/:objectId", (req: Request, res: Response) => {
+    userController.read(req, res);
+});
 
 // Should we use PATCH (was already here) or PUT (a more common update HTTP verb)
 // I will support both for now

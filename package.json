@@ -7,11 +7,11 @@
     "start": "node dist/index.js",
     "build": "npx prisma generate && tsc",
     "start:dev": "nodemon -L dist/index.js",
-    "build:dev": "npm run schema && tsc --watch --preserveWatchOutput",
+    "build:dev": "tsc --watch --preserveWatchOutput",
     "dev": "npm run schema && concurrently \"npm:build:dev\" \"npm:start:dev\"",
     "schema": "npm run schema:sync && npm run schema:build",
-    "schema:sync": "npx prisma introspect",
-    "schema:build": "npx prisma generate",
+    "schema:sync": "prisma introspect",
+    "schema:build": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/** --quiet --fix"
   },
@@ -29,9 +29,11 @@
   "dependencies": {
     "@prisma/client": "^2.20.1",
     "@types/cors": "^2.8.10",
+    "apollo-server-express": "^2.22.2",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "firebase-admin": "^9.5.0",
+    "graphql": "^15.5.0",
     "prisma": "^2.20.1"
   },
   "devDependencies": {

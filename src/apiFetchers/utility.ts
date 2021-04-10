@@ -1,16 +1,36 @@
 import fetch from "node-fetch";
 import { ErrorResponse, StatusCode, statusCodeIsSuccessful } from "../common/expresstypes"
+import keys from "../config/keys.json"
 
-export async function getContent<T>(url: string, errorMessage?: string) {
+
+export async function getContent<T>(url: string, errorMessage?: string, isRapidApi?: boolean) {
     let error: any;
     let status = StatusCode.BadRequest;
     try {
-        // try fetch the data
-        const response = await fetch(url);
-        // cast the json into the proper type if successful
-        if (statusCodeIsSuccessful(response.status)) return await response.json() as T;
-        // if it fails, we'll take note of the status code
-        status = response.status;
+
+        if (isRapidApi) {
+            // add headers object for rapid API auth
+            var headers = {
+                'x-rapidapi-key': keys.rapidapi,
+                'x-rapidapi-host': "hotels4.p.rapidapi.com"
+                };
+            
+                // try fetch the data
+            const response = await fetch(url, {headers: headers});
+
+            // cast the json into the proper type if successful
+            if (statusCodeIsSuccessful(response.status)) return await response.json() as T;
+            // if it fails, we'll take note of the status code
+            status = response.status;
+        } else {
+            // try fetch the data
+            const response = await fetch(url);
+
+            // cast the json into the proper type if successful
+            if (statusCodeIsSuccessful(response.status)) return await response.json() as T;
+            // if it fails, we'll take note of the status code
+            status = response.status;
+        }
     } catch (e) {
         // if we got an error, let's track that too
         console.error(e);

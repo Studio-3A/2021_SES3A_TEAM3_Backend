@@ -1,68 +1,72 @@
-import { getContent } from "./utility";
+import { createHeaders, getContent, HeadersType } from "./utility";
 
 const hotelLocationsSearchUrl = "https://hotels4.p.rapidapi.com/locations/search";
 const hotelDetailsSearchUrl = "https://hotels4.p.rapidapi.com/properties/list";
 
 export const getLocations = async (params: string) => {
-    return await getContent<HotelLocationDataResponse>(`${hotelLocationsSearchUrl}?${params}`, "failed to find any suitable locations.", true);
+    return await getContent<HotelLocationDataResponse>(`${hotelLocationsSearchUrl}?${params}`,
+        "failed to find any suitable locations.", createHeaders(HeadersType.Hotels));
 };
 
 export const getHotelLocations = (location: HotelLocationInput) => {
     return getLocations(
         `query=${location.query}&locale=${location.locale}`
-        );
+    );
 };
 
 export const getHotelDetails = async (params: string) => {
-    return await getContent<HotelDetailsDataResponse>(`${hotelDetailsSearchUrl}?${params}`, "failed to find any hotels for this location.", true);
+    return await getContent<HotelDetailsDataResponse>(`${hotelDetailsSearchUrl}?${params}`,
+        "failed to find any hotels for this location.", createHeaders(HeadersType.Hotels));
 };
 
 export const getHotelsByLocation = (details: HotelDetailsInput) => {
     return getHotelDetails(
-        `destinationId=${details.destinationId}&pageNumber=${details.pageNumber}&checkIn=${details.checkIn}&checkOut=${details.checkOut}&pageSize=${details.pageSize}&adults1=${details.adults1}&currency=${details.currency}&locale=${details.locale}&sortOrder=${details.sortOrder}`
-        );
+        `destinationId=${details.destinationId}&pagenumber=${details.pagenumber}&checkIn=${details.checkIn}`
+        + `&checkOut=${details.checkOut}&pageSize=${details.pageSize}&adults1=${details.adults1}`
+        + `&currency=${details.currency}&locale=${details.locale}&sortOrder=${details.sortOrder}`
+    );
 };
 
 export interface HotelLocationInput {
-    query: String,
-    locale: String
+    query: string,
+    locale: string
 };
 
 export interface HotelDetailsInput {
-    destinationId: String,
-    pageNumber: String,
-    checkIn: String,
-    checkOut: String,
-    pageSize: String,
-    adults1: String,
-    currency: String,
-    locale: String,
-    sortOrder: String
+    destinationId: string,
+    pagenumber: string,
+    checkIn: string,
+    checkOut: string,
+    pageSize: string,
+    adults1: string,
+    currency: string,
+    locale: string,
+    sortOrder: string
 };
 
 export interface HotelDetailsDataResponse {
-    result: String,
+    result: string,
     data: {
         body: {
-            header: String,
+            header: string,
             query: {
                 destination: {
-                    id: String,
-                    value: String,
-                    resolvedLocation: String
+                    id: string,
+                    value: string,
+                    resolvedLocation: string
                 }
             }
         },
         searchResults: {
-            totalCount: Number,
+            totalCount: number,
             results: HotelDetailsObject[];
         },
         pagination: {
-            currentPage: Number,
-            pageGroup: String,
-            nextPageStartIndex: Number,
-            nextPageNumber: Number,
-            nextPageGroup: String
+            currentPage: number,
+            pageGroup: string,
+            nextPageStartIndex: number,
+            nextPagenumber: number,
+            nextPageGroup: string
         },
         accomodationType: {
             applied: boolean,
@@ -83,102 +87,95 @@ export interface HotelDetailsDataResponse {
     }
 };
 
-export interface AccomodationThemeItems {
-    label: String,
-    value: String
+interface LabelValue {
+    label: string,
+    value: string
 };
 
-export interface AccessibilityItems {
-    label: String,
-    value: String
-};
+export interface AccomodationThemeItems extends LabelValue { };
 
-export interface FacilitiesItem {
-    label: String,
-    value: String
-};
+export interface AccessibilityItems extends LabelValue { };
 
-export interface AccomodationTypeItem {
-    label: String,
-    value: String
-};
+export interface FacilitiesItem extends LabelValue { };
+
+export interface AccomodationTypeItem extends LabelValue { };
 
 export interface HotelDetailsObject {
-    id: Number,
-    name: String,
-    starRating: Number,
+    id: number,
+    name: string,
+    starRating: number,
     urls: {},
     address: {
-        streetAddress: String,
-        extendedAddress: String,
-        locality: String,
-        postalCode: String,
-        region: String,
-        countryName: String,
-        countryCode: String,
+        streetAddress: string,
+        extendedAddress: string,
+        locality: string,
+        postalCode: string,
+        region: string,
+        countryName: string,
+        countryCode: string,
         obfuscate: boolean,
     },
     guestReviews: {
-        unformattedRatting: Number,
-        rating: String,
-        total: Number,
-        scale: Number
+        unformattedRatting: number,
+        rating: string,
+        total: number,
+        scale: number
     },
     landmarks: LandmarkObject[],
     ratePlan: {
         price: {
-            current: String,
-            exactCurrent: Number
+            current: string,
+            exactCurrent: number
         },
         features: {
             paymentPreference: boolean,
             noCCRequired: boolean
         }
     },
-    neighbourhood: String,
+    neighbourhood: string,
     deals: {},
     messaging: {},
     badging: {},
     coordinate: {
-        lat: Number,
-        lon: Number
+        lat: number,
+        lon: number
     },
-    providerType: String,
-    supplierHotelId: Number,
-    vrBadge: String,
+    providerType: string,
+    supplierHotelId: number,
+    vrBadge: string,
     isAlternative: boolean,
     optimizedThumbUrls: {
-        srpDesktop: String
+        srpDesktop: string
     }
 };
 
 export interface LandmarkObject {
-    label: String,
-    distance: String
+    label: string,
+    distance: string
 }
 
 export interface HotelLocationDataResponse {
-    term: String,
+    term: string,
     moresuggestions: number,
-    autoSuggestInstance: String,
-    trackingID: String,
+    autoSuggestInstance: string,
+    trackingID: string,
     misspellingfallback: boolean,
     suggestions: HotelLocationData[];
 };
 
 export interface HotelSuggestionObject {
-    geoId: String,
-    destinationId: String,
-    landmarkCityDestinationId: String,
-    type: String,
-    redirectPage: String,
+    geoId: string,
+    destinationId: string,
+    landmarkCityDestinationId: string,
+    type: string,
+    redirectPage: string,
     latitude: number,
     longitude: number,
-    caption: String,
-    name: String,
+    caption: string,
+    name: string,
 }
 
 export interface HotelLocationData {
-    group: String,
+    group: string,
     entities: HotelSuggestionObject[];
 }

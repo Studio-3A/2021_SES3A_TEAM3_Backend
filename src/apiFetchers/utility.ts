@@ -1,36 +1,52 @@
-import fetch from "node-fetch";
+import fetch, { HeadersInit, BodyInit } from "node-fetch";
 import { ErrorResponse, StatusCode, statusCodeIsSuccessful } from "../common/expresstypes"
 import keys from "../config/keys.json"
 
+export enum HeadersType {
+    Hotels,
+    Transport, // TripGo
+}
 
-export async function getContent<T>(url: string, errorMessage?: string, isRapidApi?: boolean) {
+export function createHeaders(type: HeadersType): HeadersInit {
+    // if we need to make custom headers for anything, we can just do it here :)
+    switch (type) {
+        case HeadersType.Hotels:
+            return {
+                'x-rapidapi-key': keys.rapidapi,
+                'x-rapidapi-host': "hotels4.p.rapidapi.com"
+            };
+        case HeadersType.Transport:
+            return {
+                'X-TripGo-Key': keys.tripgo
+            };
+        default:
+            throw Error(`Unhandled header type ${type}`);
+    }
+}
+
+type RequestMethod = "GET" | "POST";
+
+export async function getContent<T>(url: string, errorMessage?: string, headers?: HeadersInit) {
+    return makeRequest<T>("GET", url, errorMessage, headers);
+}
+
+export async function postContent<T>(url: string, errorMessage?: string, headers?: HeadersInit, body?: BodyInit) {
+    return makeRequest<T>("POST", url, errorMessage, headers, body);
+}
+
+async function makeRequest<T>(method: RequestMethod, url: string, errorMessage?: string, headers?: HeadersInit, body?: BodyInit,) {
     let error: any;
     let status = StatusCode.BadRequest;
     try {
+        // try fetch the data
+        const response = await fetch(url, { method, headers, body });
 
-        if (isRapidApi) {
-            // add headers object for rapid API auth
-            var headers = {
-                'x-rapidapi-key': keys.rapidapi,
-                'x-rapidapi-host': "hotels4.p.rapidapi.com"
-                };
-            
-                // try fetch the data
-            const response = await fetch(url, {headers: headers});
+        // cast the json into the proper type if successful
+        if (statusCodeIsSuccessful(response.status)) return await response.json() as T;
+        else error = response.json() as any;
+        // if it fails, we'll take note of the status code
+        status = response.status;
 
-            // cast the json into the proper type if successful
-            if (statusCodeIsSuccessful(response.status)) return await response.json() as T;
-            // if it fails, we'll take note of the status code
-            status = response.status;
-        } else {
-            // try fetch the data
-            const response = await fetch(url);
-
-            // cast the json into the proper type if successful
-            if (statusCodeIsSuccessful(response.status)) return await response.json() as T;
-            // if it fails, we'll take note of the status code
-            status = response.status;
-        }
     } catch (e) {
         // if we got an error, let's track that too
         console.error(e);
@@ -42,3 +58,4 @@ export async function getContent<T>(url: string, errorMessage?: string, isRapidA
     const errResponse: ErrorResponse = { error, status, errorMessage };
     return errResponse;
 }
+

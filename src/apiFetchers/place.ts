@@ -1,5 +1,6 @@
 import { getContent } from "./utility";
 import keys from '../config/keys.json';
+import { Coordinate } from "../common/objects";
 
 const nearbyPlacesSearchUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/output?";
 
@@ -14,42 +15,34 @@ export const getPlacesByLocation = (details: NearbyPlacesInput) => {
 };
 
 export interface NearbyPlacesInput {
-    location: NearbyPlacesLatLng
-    radius: String
+    location: Coordinate;
+    radius: string
 };
-
-export interface NearbyPlacesLatLng {
-    lat: String
-    lng: String
-}
 
 export interface PlacesDataResponse {
     results: [
         {
             geometry: {
-                location: {
-                    lat: Number
-                    lng: Number
-                }
+                location: Coordinate
             },
-            icon: String
-            name: String
+            icon: string
+            name: string
             opening_hours: {
                 open_now: true
             },
             photos: [
                 {
-                    height: Number
+                    height: number
                     html_attribution: [],
-                    photo_reference: String
-                    width: Number
+                    photo_reference: string
+                    width: number
                 }
             ],
-            place_id: String
-            reference: String
-            types: String[]
-            vicinity: String
+            place_id: string
+            reference: string
+            types: string[]
+            vicinity: string
         }
     ]
-    status: String
+    status: string
 }

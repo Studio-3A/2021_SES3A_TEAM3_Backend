@@ -89,3 +89,14 @@ export interface Event {
 export interface EventBooking extends Event, Booking {
     eventId: string;
 }
+
+export interface Color {
+    red: number;
+    blue: number;
+    green: number;
+}
+
+export interface Coordinate {
+    lat: number,
+    lng: number;
+}

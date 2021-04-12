@@ -70,8 +70,8 @@ dataRouter.post("/transport/atob", async (req: Request<unknown, unknown, Routing
   }
 });
 
-dataRouter.get('/flight', async(req: Request<unknown, unknown, unknown, FlightRequest>, res: Response) => {
-  const flightRequest = req.query;
+dataRouter.get('/flight', async (req: Request<unknown, unknown, unknown, FlightRequest>, res: Response) => {
+  const flightRequest: FlightRequest = req.query;
   const flightDetails= await getFlights(flightRequest);
   res.send(flightDetails);
 })

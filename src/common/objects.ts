@@ -97,6 +97,6 @@ export interface Color {
 }
 
 export interface Coordinate {
-    lat: number,
+    lat: number;
     lng: number;
 }

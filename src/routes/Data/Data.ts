@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { getWeatherForecastByLocation, getWeatherForecastByLongLat, WeatherLocationInput, WeatherLongLatInput } from '../../apiFetchers/weather';
 import { getHotelLocations, getHotelsByLocation, HotelLocationInput, HotelDetailsInput, getHotelDetails } from '../../apiFetchers/hotel';
+import { getFlights, FlightRequest } from '../../apiFetchers/flight'
 import { getPlacesByLocation, NearbyPlacesInput } from '../../apiFetchers/place';
 import { getAtoBTrip, RoutingInput, RoutingRequest } from '../../apiFetchers/transport';
 import { ErrorResponse, StatusCode } from '../../common/expresstypes';
@@ -68,3 +69,9 @@ dataRouter.post("/transport/atob", async (req: Request<unknown, unknown, Routing
     res.send(aToBTrip);
   }
 });
+
+dataRouter.get('/flight', async(req: Request<unknown, unknown, unknown, FlightRequest>, res: Response) => {
+  const flightRequest = req.query;
+  const flightDetails= await getFlights(flightRequest);
+  res.send(flightDetails);
+})

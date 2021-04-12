@@ -4,7 +4,7 @@ import FirebaseAdmin, { ServiceAccount } from "firebase-admin";
 import keys from "./config/keys.json";
 
 FirebaseAdmin.initializeApp({
-    credential: FirebaseAdmin.credential.cert(<ServiceAccount>keys.serviceAccountKey)
+    credential: FirebaseAdmin.credential.cert(<ServiceAccount>keys.serviceAccountKey),
 });
 
 export default FirebaseAdmin;

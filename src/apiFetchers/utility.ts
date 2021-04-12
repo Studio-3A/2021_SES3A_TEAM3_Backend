@@ -5,6 +5,7 @@ import keys from "../config/keys.json"
 export enum HeadersType {
     Hotels,
     Transport, // TripGo
+    Flights,
 }
 
 export function createHeaders(type: HeadersType): HeadersInit {
@@ -19,6 +20,11 @@ export function createHeaders(type: HeadersType): HeadersInit {
             return {
                 'X-TripGo-Key': keys.tripgo
             };
+        case HeadersType.Flights:
+            return {
+                'x-rapidapi-key': keys.rapidapi,
+                'x-rapidapi-host': "skyscanner-skyscanner-flight-search-v1.p.rapidapi.com",
+            }
         default:
             throw Error(`Unhandled header type ${type}`);
     }

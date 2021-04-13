@@ -13,13 +13,16 @@ const cookieOptions = {
 
 // Use as middleware to set the user where based on the header
 export async function parseAuthSession(req: Request, res: Response, next: Function) {
-    // TODO: Pass the ID/Token as a header on requests instead of in the body as JSON 
-    const token: string | undefined = req?.header("Firebase-Token") || req.cookies.FirebaseToken;
+    const headerToken = req.header("Firebase-Token");
+    const cookieToken = req.cookies.FirebaseToken;
+
+    // Note if the token retreival fails on the frontend we might get they might get the string literal "undefined" instead of no header
+    const token: string | undefined = (headerToken && headerToken !== "undefined") ? headerToken : cookieToken;
 
     if (token) {
         try {
             const decodedToken = await FirebaseAdmin.auth().verifyIdToken(token);
-            if (!req.cookies.FirebaseToken) {
+            if (!cookieToken) {
                 res.cookie("FirebaseToken", token, cookieOptions);
             }
             req.session = decodedToken;

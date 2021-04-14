@@ -3,8 +3,7 @@ import { getWeatherForecastByLocation, getWeatherForecastByLongLat, WeatherLocat
 import { getHotelLocations, getHotelsByLocation, HotelLocationInput, HotelDetailsInput, getHotelDetails } from '../../apiFetchers/hotel';
 import { getFlights, FlightRequest } from '../../apiFetchers/flight'
 import { getPlacesByLocation, NearbyPlacesInput } from '../../apiFetchers/place';
-import { getAtoBTrip, RoutingInput, RoutingRequest } from '../../apiFetchers/transport';
-import { ErrorResponse, StatusCode } from '../../common/expresstypes';
+import { DirectionsRequest, getDirections } from "../../apiFetchers/directions";
 
 export const dataRouter = express.Router({
   strict: true,
@@ -41,37 +40,14 @@ dataRouter.get('/place/nearby', async (req: Request<unknown, unknown, unknown, N
   res.send(placesData);
 });
 
-dataRouter.post("/transport/atob", async (req: Request<unknown, unknown, RoutingInput, unknown>, res: Response) => {
-  // TODO - JUSTIN - probably check date formats and only allow UTC
+dataRouter.post("/directions", async (req: Request<unknown, unknown, DirectionsRequest, unknown>, res: Response) => {
   const input = req.body;
-  const departAfter = new Date(input.departAfter).getTime();
-  const arriveBefore = new Date(input.arriveBefore).getTime()
-  if (isNaN(departAfter) || isNaN(arriveBefore)) {
-    const err: ErrorResponse = { status: StatusCode.BadRequest, errorMessage: "Invalid date values" }
-    res.send(err)
-  } else {
-    const data: RoutingRequest = {
-      to: input.to,
-      from: input.from,
-      departAfter,
-      arriveBefore,
-      // modes should be retrieved on app load and refreshed every so often instead of being hardcoded...
-      modes: [
-        "pt_pub",
-        "wa_wal"
-        // "pt_sch", "cy_bic", "ps_tax", "me_car", "me_mot",
-      ],
-      conc: false,
-      bestOnly: false,
-      allModes: true
-    }
-    const aToBTrip = await getAtoBTrip(data);
-    res.send(aToBTrip);
-  }
+  const directions = await getDirections(input);
+  res.send(directions);
 });
 
 dataRouter.get('/flight', async (req: Request<unknown, unknown, unknown, FlightRequest>, res: Response) => {
   const flightRequest: FlightRequest = req.query;
-  const flightDetails= await getFlights(flightRequest);
+  const flightDetails = await getFlights(flightRequest);
   res.send(flightDetails);
 })

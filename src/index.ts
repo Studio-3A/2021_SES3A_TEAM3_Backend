@@ -10,6 +10,7 @@ import { parseAuthSession } from "./authentication";
 // Application Logic
 import { authRouter, userRouter } from "./routes";
 
+
 async function startServer() {
     const app = express();
     

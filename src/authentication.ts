@@ -1,6 +1,8 @@
 // Remember to get the serviceAccountKey.json file from Teams as it should not be commited to GitHub
 
 import FirebaseAdmin, { ServiceAccount } from "firebase-admin";
+import keys from "./config/keys.json";
+
 import serviceAccount from "./config/serviceAccountKey.json";
 import { Request, Response } from "./common/expresstypes";
 
@@ -38,7 +40,7 @@ export async function parseAuthSession(req: Request, res: Response, next: Functi
 };
 
 FirebaseAdmin.initializeApp({
-    credential: FirebaseAdmin.credential.cert(<ServiceAccount> serviceAccount)
+    credential: FirebaseAdmin.credential.cert(<ServiceAccount>keys.serviceAccountKey),
 });
 
 export default FirebaseAdmin;

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response }from "express";
 import { StatusCode, Request, Response } from "../../common/expresstypes";
 
 export const authRouter = express.Router({

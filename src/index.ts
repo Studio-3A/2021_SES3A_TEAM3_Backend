@@ -1,16 +1,21 @@
 import express from "express";
-import cors from "cors";
 import { PORT, HOST, PROTOCOL } from "./config/constants";
-import { authRouter, userRouter } from "./routes";
+
+// Middleware
+import cors from "cors";
+import cookieParser, { CookieParseOptions } from "cookie-parser";
 import apolloServer from "./Apollo";
 import { parseAuthSession } from "./authentication";
-import { ApolloServer } from "apollo-server-express";
+
+// Application Logic
+import { authRouter, userRouter } from "./routes";
 
 async function startServer() {
     const app = express();
     
     // Disable annoying browser security
     app.use(cors({ origin: `http://${HOST}:3000` }));
+    app.use(cookieParser());
     app.use(parseAuthSession);
     
     await apolloServer.start();

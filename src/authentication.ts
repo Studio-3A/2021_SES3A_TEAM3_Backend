@@ -4,20 +4,35 @@ import FirebaseAdmin, { ServiceAccount } from "firebase-admin";
 import serviceAccount from "./config/serviceAccountKey.json";
 import { Request, Response } from "./common/expresstypes";
 
+const cookieOptions = {
+    maxAge: 60 * 60 * 1000, /* 1 hour */
+    httpOnly: true,
+    path: "/",
+    sameSite: false,
+};
+
 // Use as middleware to set the user where based on the header
 export async function parseAuthSession(req: Request, res: Response, next: Function) {
-    // TODO: Pass the ID/Token as a header on requests instead of in the body as JSON 
-    const token: string | undefined = req?.header("Firebase-Token");
+    const headerToken = req.header("Firebase-Token");
+    const cookieToken = req.cookies.FirebaseToken;
+
+    // Note if the token retreival fails on the frontend we might get they might get the string literal "undefined" instead of no header
+    const token: string | undefined = (headerToken && headerToken !== "undefined") ? headerToken : cookieToken;
 
     if (token) {
         try {
             const decodedToken = await FirebaseAdmin.auth().verifyIdToken(token);
+            if (!cookieToken) {
+                res.cookie("FirebaseToken", token, cookieOptions);
+            }
             req.session = decodedToken;
         } catch (err) {
-            req.session = undefined;
+            res.cookie("FirebaseToken", undefined, { ...cookieOptions, maxAge: 0 });
+            req.session = null;
         }
     } else {
-        req.session = undefined;
+        res.cookie("FirebaseToken", undefined, { ...cookieOptions, maxAge: 0 });
+        req.session = null;
     }
     next();
 };

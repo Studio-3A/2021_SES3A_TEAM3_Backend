@@ -6,7 +6,7 @@ export const authRouter = express.Router({
 });
 
 authRouter.post("/checkToken", async (req: Request, res: Response) => {
-    if (req.session !== undefined) {
+    if (req.session) { // Should NOT be null (or undefined) for a valid session
         return res.sendStatus(StatusCode.OK);
     } else {
         return res.sendStatus(StatusCode.Unauthorized);

@@ -1,10 +1,11 @@
+import { responseIsErrorResponse } from "../common/expresstypes";
 import { createHeaders, getContent, HeadersType } from "./utility";
 
 //STILL TO DO: SUBSCRIBE RAPIDAPI KEY TO SKYSCANNER API (whoever currently owns the key)
 const skyscannerUrl = 'https://skyscanner-skyscanner-flight-search-v1.p.rapidapi.com/apiservices/';
 export const getFlights = async (req: FlightRequest) => {
-    if (req.inboundPartialDate == null) req.inboundPartialDate = ""; // if there's no inbound date, we use an empty string for a one way trip
-    if (req.locale == null) req.locale = "en-US";
+    req.inboundPartialDate = req.inboundPartialDate || ""; // if there's no inbound date, we use an empty string for a one way trip
+    req.locale = req.locale || "en-US";
 
     let placeRequestObject = {
         "placeName": "",
@@ -17,7 +18,11 @@ export const getFlights = async (req: FlightRequest) => {
     const originPlaces = await getPlaces(placeRequestObject);
     placeRequestObject.placeName = req.destinationPlace;
     const destinationPlaces = await getPlaces(placeRequestObject);
-    if (!("Places" in originPlaces && "Places" in destinationPlaces)) return;
+    if (responseIsErrorResponse(originPlaces) || responseIsErrorResponse(destinationPlaces)) {
+        return;
+    }
+
+    // if (!("Places" in originPlaces && "Places" in destinationPlaces)) return;
     req.originPlace = originPlaces.Places[0].PlaceId;
     req.destinationPlace = destinationPlaces.Places[0].PlaceId;
 
@@ -37,7 +42,7 @@ export interface FlightRequest {
     country: string, //Abbreviation of country name - i.e. AU, US, UK.
     currency: string, //i.e. USD, AUD, GBP
     locale?: string, //ISO Locale Code to get results in - i.e. en-GB, en-US.
-    originPlace: string, 
+    originPlace: string,
     destinationPlace: string,
     outboundPartialDate: string, //yyyy-mm-dd or yyyy-mm or anytime
     inboundPartialDate?: string //yyyy-mm-dd or yyyy-mm or anytime

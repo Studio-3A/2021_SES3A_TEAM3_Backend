@@ -32,12 +32,12 @@ export const statusCodeIsSuccessful = (code: number) => {
     }
 }
 
-export interface Response {
+export interface BasicResponse {
     status: StatusCode;
     message?: string;
 }
 
-export interface ErrorResponse extends Response {
+export interface ErrorResponse extends BasicResponse {
     errorMessage?: string;
     error?: any; // yeah idk what type this is going to be... ¯\_(ツ)_/¯
 }

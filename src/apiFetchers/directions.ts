@@ -1,7 +1,7 @@
-import { Color, Coordinate } from "../common/objects";
+import { Coordinate, coordinatesAreValid } from "../common/objects";
 import { getContent } from "./utility";
 import keys from '../config/keys.json';
-import { BadRequest, ErrorResponse, GeneralErrorResponse, HandleErrorResponse, StatusCode, StatusCodeError, StatusCodeErrorResponse, StringErrorResponse } from "../common/expresstypes";
+import { HandleErrorResponse, StatusCode, StatusCodeError } from "../common/expresstypes";
 
 const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?key=${keys.directions}`;
 
@@ -54,10 +54,7 @@ const DirectionsRequestIsValid = (req: DirectionsRequest) => {
     if (req.arrivalTime != null && req.departureTime != null) {
         throw new StatusCodeError(StatusCode.BadRequest, "Arrival time and departure time cannot be used simultaneously");
     }
-    const coordIsValid = (latlng: Coordinate) => {
-        return latlng != null && latlng.lat != null && latlng.lng != null;
-    }
-    if (!coordIsValid(req.origin) || !coordIsValid(req.destination)) {
+    if (!coordinatesAreValid(req.origin) || !coordinatesAreValid(req.destination)) {
         throw new StatusCodeError(StatusCode.BadRequest, "Origin and destination coordinates must have valid latitude and longitude values");
     }
 }

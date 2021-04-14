@@ -4,7 +4,6 @@ import keys from "../config/keys.json"
 
 export enum HeadersType {
     Hotels,
-    Transport, // TripGo
     Flights,
 }
 
@@ -15,10 +14,6 @@ export function createHeaders(type: HeadersType): HeadersInit {
             return {
                 'x-rapidapi-key': keys.rapidapi,
                 'x-rapidapi-host': "hotels4.p.rapidapi.com"
-            };
-        case HeadersType.Transport:
-            return {
-                'X-TripGo-Key': keys.tripgo
             };
         case HeadersType.Flights:
             return {
@@ -61,7 +56,5 @@ async function makeRequest<T>(method: RequestMethod, url: string, errorMessage?:
 
     // we'll be here if either the status code wasn't 2**, or if some exception was thrown :/
     if (errorMessage == null) errorMessage = `Request to ${url} failed.`
-    const errResponse: ErrorResponse = { error, status, errorMessage };
-    return errResponse;
+    return ErrorResponse(status, errorMessage, error);
 }
-

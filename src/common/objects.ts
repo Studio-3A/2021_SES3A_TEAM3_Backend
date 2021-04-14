@@ -100,3 +100,7 @@ export interface Coordinate {
     lat: number;
     lng: number;
 }
+
+export const coordinatesAreValid = (xy: Coordinate) => {
+    return xy == null || xy.lat == null || xy.lng == null;
+}

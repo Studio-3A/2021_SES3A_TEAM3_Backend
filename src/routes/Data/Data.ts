@@ -1,9 +1,10 @@
 import express, { Request, Response } from 'express';
-import { getWeatherForecastByLocation, getWeatherForecastByLongLat, WeatherLocationInput, WeatherLongLatInput } from '../../apiFetchers/weather';
-import { getHotelLocations, getHotelsByLocation, HotelLocationInput, HotelDetailsInput, getHotelDetails } from '../../apiFetchers/hotel';
+import { getWeatherForecastByLocation, getWeatherForecastByLongLat, WeatherLocationInput } from '../../apiFetchers/weather';
+import { getHotelLocations, getHotelsByLocation, HotelLocationInput, HotelDetailsInput } from '../../apiFetchers/hotel';
 import { getFlights, FlightRequest } from '../../apiFetchers/flight'
 import { getPlacesByLocation, NearbyPlacesInput } from '../../apiFetchers/place';
 import { DirectionsRequest, getDirections } from "../../apiFetchers/directions";
+import { Coordinate } from '../../common/objects';
 
 export const dataRouter = express.Router({
   strict: true,
@@ -15,8 +16,8 @@ dataRouter.get('/weather/location', async (req: Request<unknown, unknown, unknow
   res.send(forecastData);
 });
 
-dataRouter.get('/weather/coordinates', async (req: Request<unknown, unknown, unknown, WeatherLongLatInput>, res: Response) => {
-  const longLatInput: WeatherLongLatInput = req.query;
+dataRouter.get('/weather/coordinates', async (req: Request<unknown, unknown, unknown, Coordinate>, res: Response) => {
+  const longLatInput: Coordinate = req.query;
   const forecastData = await getWeatherForecastByLongLat(longLatInput);
   res.send(forecastData);
 });

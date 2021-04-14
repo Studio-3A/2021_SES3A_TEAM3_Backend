@@ -24,26 +24,26 @@ export interface PlacesDataResponse {
     results: [
         {
             geometry: {
-                location: Coordinate
-            }, 
-            icon: string,
-            name: string,
-            opening_hours: {
-                open_now: true
+                location: Coordinate;
             },
-            photos: [
-                {
-                    height: number,
-                    html_attribution: [],
-                    photo_reference: string,
-                    width: number
-                }
-            ],
-            place_id: string,
-            reference: string,
-            types: string[],
-            vicinity: string
+            icon: string;
+            name: string;
+            opening_hours: {
+                open_now: true;
+            },
+            photos: Photo[];
+            place_id: string;
+            reference: string;
+            types: string[];
+            vicinity: string;
         }
     ]
-    status: string
+    status: string;
+}
+
+export interface Photo {
+    height: number;
+    html_attribution: [];
+    photo_reference: string;
+    width: number;
 }

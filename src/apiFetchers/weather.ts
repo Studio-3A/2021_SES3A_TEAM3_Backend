@@ -1,36 +1,50 @@
+import { HandleErrorResponse as HandleError, StatusCode, StatusCodeError } from '../common/expresstypes';
+import { Coordinate, coordinatesAreValid } from '../common/objects';
 import keys from '../config/keys.json';
 import { getContent } from "./utility";
 
-const weatherbitUrl: string = 'https://api.weatherbit.io/v2.0/forecast/daily';
+const weatherbitUrl: string = `https://api.weatherbit.io/v2.0/forecast/daily?key=${keys.weatherbit}`;
 
 const getWeatherForecast = async (params: string) => {
-  return await getContent<WeatherDataResponse>(`${weatherbitUrl}?${params}`, "Getting the weather failed.");
+  return await getContent<WeatherDataResponse>(`${weatherbitUrl}&${params}`, "Getting the weather failed.");
 };
 
 //Example: getWeatherForecastByLocation("New York", "US", 7);
 export const getWeatherForecastByLocation = (location: WeatherLocationInput) => {
-  return getWeatherForecast(
-    `key=${keys.weatherbit}&city=${location.city}&country=${location.country}&days=${location.days}`
-  );
+  try {
+    checkWeatherLocationInputIsValid(location);
+    return getWeatherForecast(`city=${location.city}&country=${location.country}&days=${location.days}`);
+  } catch (e) {
+    return HandleError(e);
+  }
 };
 
 //Example: getWeatherForecastByLongLat(-78.543, 38.123)
-export const getWeatherForecastByLongLat = (longLat: WeatherLongLatInput) => {
-  return getWeatherForecast(
-    `key=${keys.weatherbit}&lat=${longLat.latitude}&lon=${longLat.longitude}`
-  );
+export const getWeatherForecastByLongLat = (longLat: Coordinate) => {
+  try {
+    checkCoordinateInputIsValid(longLat);
+    return getWeatherForecast(`lat=${longLat.lat}&lon=${longLat.lng}`);
+  } catch (e) {
+    return HandleError(e);
+  }
 };
 
-
-export interface WeatherLocationInput {
-  city: string,
-  country: string,
-  days: number
+const checkWeatherLocationInputIsValid = (input: WeatherLocationInput) => {
+  if (input.city == null || input.country == null || input.days == null) {
+    throw new StatusCodeError(StatusCode.BadRequest, "City, country and days must be defined");
+  }
 }
 
-export interface WeatherLongLatInput {
-  longitude: number;
-  latitude: number;
+const checkCoordinateInputIsValid = (input: Coordinate) => {
+  if (!coordinatesAreValid(input)) {
+    throw new StatusCodeError(StatusCode.BadRequest, "Latitude and longitude must be defined for coordinates");
+  }
+}
+
+export interface WeatherLocationInput {
+  city?: string,
+  country?: string,
+  days?: number
 }
 
 // from https://www.weatherbit.io/api/weather-forecast-16-day

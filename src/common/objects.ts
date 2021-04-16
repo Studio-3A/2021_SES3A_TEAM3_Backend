@@ -102,5 +102,5 @@ export interface Coordinate {
 }
 
 export const coordinatesAreValid = (xy: Coordinate) => {
-    return xy == null || xy.lat == null || xy.lng == null;
+    return xy != null && xy.lat != null && xy.lng != null;
 }

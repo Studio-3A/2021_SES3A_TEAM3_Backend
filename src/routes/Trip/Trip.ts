@@ -18,24 +18,29 @@ interface TripGenerationInputs {
 
 }
 
+interface Trip {
+  trip: Activity[];
+}
+
 tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInputs, unknown>, res: Response) => {
   try {
     const input = req.body;
     CheckInputIsValid(input);
 
     const { startLocation, endLocation, startDate, endDate } = input;
-    const radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.35;
+    const radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.4;
     const centre = getMidpointBetweenTwoCoordinates(startLocation, endLocation);
     const placesInput: NearbyPlacesInput = { ...centre, radius, queryByPrice: false };
     let allPlaces: Place[] = [];
 
-    const doStuff = async (queryByPrice: boolean) => {
-      let places = await getPlacesByLocation({ ...placesInput, queryByPrice });
+    const doStuff = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
+      if (iteration > 2) return;
+      let places = await getPlacesByLocation({ ...placesInput, queryByPrice, pagetoken });
       if (!isErrorResponse(places)) {
         allPlaces = allPlaces.concat(places.results);
-        // if (places.next_page_token) {
-        //   places = await getPlacesByLocation({ ...placesInput, pagetoken: places.next_page_token });
-        // }
+        if (places.next_page_token) {
+          await doStuff(queryByPrice, places.next_page_token, iteration + 1);
+        }
       }
     }
 
@@ -43,7 +48,7 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
     await doStuff(false);
 
     const actual = getRefinedPlaces(allPlaces);
-    const trip = generateTrip(actual, startDate, endDate);
+    const trip: Trip = { trip: generateTrip(actual, startDate, endDate) };
 
     res.send(trip);
   } catch (e) {

@@ -42,7 +42,7 @@ export const getRefinedPlaces = (places: Place[]) => {
             if (weWantToGoToThisPlace) {
                 // if its a place we want to go to, make sure if the place a food place by rechecking types
                 // TODO: simplify the check to make it not O(n*m)
-                if (types.find(t => t === "restaurant" || t === "food")) organisedPlaces.food.push(place);
+                if (types.find(t => !!FOOD_PLACES_TO_GO.find(food => food === t))) organisedPlaces.food.push(place);
                 else organisedPlaces.nonFood.push(place);
                 break;
             }
@@ -94,20 +94,24 @@ type BusinessStatus = "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY
 
 type PlaceType = QueryPlaceType | AdditionalResultPlaceType;
 
-type QueryPlaceType = 'accounting' | 'airport' | 'atm' | 'bakery' | 'bank' | 'bar' | 'beauty_salon' | 'bicycle_store' | 'book_store' | 'bowling_alley'
-    | 'bus_station' | 'cafe' | 'campground' | 'car_dealer' | 'car_rental' | 'car_repair' | 'car_wash' | 'casino' | 'cemetery' | 'church' | 'city_hall' | 'clothing_store' | 'convenience_store'
+type QueryPlaceType = 'accounting' | 'airport' | 'atm' | 'bank' | 'bar' | 'beauty_salon' | 'bicycle_store' | 'book_store'
+    | 'bus_station' | 'car_dealer' | 'car_rental' | 'car_repair' | 'car_wash' | 'casino' | 'cemetery' | 'church' | 'clothing_store' | 'convenience_store'
     | 'courthouse' | 'dentist' | 'department_store' | 'doctor' | 'drugstore' | 'electrician' | 'electronics_store' | 'embassy' | 'fire_station' | 'florist' | 'funeral_home' | 'furniture_store'
-    | 'gas_station' | 'gym' | 'hair_care' | 'hardware_store' | 'hindu_temple' | 'home_goods_store' | 'hospital' | 'insurance_agency' | 'jewelry_store' | 'laundry' | 'lawyer' | 'library'
-    | 'light_rail_station' | 'liquor_store' | 'local_government_office' | 'locksmith' | 'meal_delivery' | 'meal_takeaway' | 'mosque' | 'movie_rental' | 'moving_company' | 'night_club'
+    | 'gas_station' | 'gym' | 'hair_care' | 'hardware_store' | 'hindu_temple' | 'home_goods_store' | 'hospital' | 'insurance_agency' | 'jewelry_store' | 'laundry' | 'lawyer'
+    | 'light_rail_station' | 'liquor_store' | 'local_government_office' | 'locksmith' | 'meal_delivery' | 'mosque' | 'movie_rental' | 'moving_company'
     | 'painter' | 'parking' | 'pet_store' | 'pharmacy' | 'physiotherapist' | 'plumber' | 'police' | 'post_office' | 'primary_school' | 'real_estate_agency' | 'lodging'
-    | 'roofing_contractor' | 'rv_park' | 'school' | 'secondary_school' | 'shoe_store' | 'shopping_mall' | 'spa' | 'stadium' | 'storage' | 'store' | 'subway_station' | 'supermarket'
+    | 'roofing_contractor' | 'rv_park' | 'school' | 'secondary_school' | 'shoe_store' | 'shopping_mall' | 'stadium' | 'storage' | 'store' | 'subway_station' | 'supermarket'
     | 'synagogue' | 'taxi_stand' | 'train_station' | 'transit_station' | 'travel_agency' | 'university' | 'veterinary_care' | PlacesToGo;
 
-type PlacesToGo = 'restaurant' | NonFoodPlacesToGo;
+type PlacesToGo = 'restaurant' | 'bakery' | 'cafe' | 'meal_takeaway' | NonFoodPlacesToGo;
 
-type NonFoodPlacesToGo = 'amusement_park' | 'aquarium' | 'art_gallery' | 'movie_theater' | 'museum' | 'park' | 'tourist_attraction' | 'zoo';
+const FOOD_PLACES_TO_GO: PlaceType[] = ['restaurant', 'bakery', 'cafe', 'meal_takeaway'];
 
-const PLACES_TO_GO: PlaceType[] = ['amusement_park', 'aquarium', 'art_gallery', 'movie_theater', 'restaurant', 'museum', 'park', 'tourist_attraction', 'zoo'];
+type NonFoodPlacesToGo = 'amusement_park' | 'aquarium' | 'art_gallery' | 'movie_theater' | 'museum' | 'park' | 'tourist_attraction' | 'zoo' | 'spa' | 'library' | 'night_club' | 'campground' | 'bowling_alley'
+    | 'city_hall';
+
+const PLACES_TO_GO: PlaceType[] = ['amusement_park', 'aquarium', 'art_gallery', 'movie_theater', 'restaurant', 'museum', 'park', 'tourist_attraction', 'zoo',
+    'bakery', 'spa', 'cafe', 'library', 'night_club', 'campground', 'bowling_alley', 'city_hall', 'landmark', 'natural_feature', 'lodging'];
 
 type AdditionalResultPlaceType = 'administrative_area_level_1' | 'administrative_area_level_2' | 'administrative_area_level_3' | 'administrative_area_level_4' | 'administrative_area_level_5'
     | 'archipelago' | 'colloquial_area' | 'continent' | 'country' | 'establishment' | 'finance' | 'floor' | 'food' | 'general_contractor' | 'geocode' | 'health' | 'intersection' | 'landmark'

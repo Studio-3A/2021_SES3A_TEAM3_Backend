@@ -47,8 +47,13 @@ export function isErrorResponse(resp: any): resp is ErrorResponse {
     return r.status != null && !statusCodeIsSuccessful(r.status);
 }
 
+function isStatusCodeError(err: any): err is StatusCodeError {
+    const r = err as Partial<StatusCodeError>
+    return r.code != null && r.message != null;
+}
+
 export function HandleErrorResponse(e: any) {
-    if (e instanceof StatusCodeError) {
+    if (isStatusCodeError(e)) {
         return StatusCodeErrorResponse(e);
     } else if (typeof e === 'string' || e instanceof String) {
         return StringErrorResponse(e);
@@ -106,6 +111,8 @@ export class StatusCodeError extends Error {
         this.code = code;
     }
 }
+
+
 
 // Syntax of type A & type B more or less just merges them
 // Add any request properties here so that we don't have to use any

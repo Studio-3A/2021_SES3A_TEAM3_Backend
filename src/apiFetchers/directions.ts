@@ -96,7 +96,7 @@ export interface FeatureAvoid {
     indoor?: boolean;
 }
 
-type DirectionsResponseStatus = "OK" | "NOT_FOUND" | "ZERO_RESULTS" | "MAX_WAYPOINTS_EXCEEDED" | "MAX_ROUTE_LENGTH_EXCEEDED" |
+export type DirectionsResponseStatus = "OK" | "NOT_FOUND" | "ZERO_RESULTS" | "MAX_WAYPOINTS_EXCEEDED" | "MAX_ROUTE_LENGTH_EXCEEDED" |
     "INVALID_REQUEST" | "OVER_DAILY_LIMIT" | "OVER_QUERY_LIMIT" | "REQUEST_DENIED" | "UNKNOWN_ERROR";
 
 export interface DirectionsResponse {

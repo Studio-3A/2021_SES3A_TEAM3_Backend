@@ -44,7 +44,14 @@ async function makeRequest<T>(method: RequestMethod, url: string, errorMessage?:
 
         // cast the json into the proper type if successful
         if (statusCodeIsSuccessful(response.status)) return await response.json() as T;
-        else error = response.json() as any;
+        else {
+            try {
+                error = await response.json() as any;
+            } catch (e) {
+
+            }
+
+        }
         // if it fails, we'll take note of the status code
         status = response.status;
 

@@ -42,7 +42,7 @@ export interface ErrorResponse extends BasicResponse {
     error?: any; // yeah idk what type this is going to be... ¯\_(ツ)_/¯
 }
 
-export function responseIsErrorResponse(resp: any): resp is ErrorResponse {
+export function isErrorResponse(resp: any): resp is ErrorResponse {
     const r = resp as Partial<ErrorResponse>
     return r.status != null && !statusCodeIsSuccessful(r.status);
 }

@@ -40,15 +40,21 @@ export interface BasicResponse {
 export interface ErrorResponse extends BasicResponse {
     errorMessage?: string;
     error?: any; // yeah idk what type this is going to be... ¯\_(ツ)_/¯
+    isError: true;
 }
 
-export function responseIsErrorResponse(resp: any): resp is ErrorResponse {
+export function isErrorResponse(resp: any): resp is ErrorResponse {
     const r = resp as Partial<ErrorResponse>
-    return r.status != null && !statusCodeIsSuccessful(r.status);
+    return r.status != null && r.isError != null && r.isError && !statusCodeIsSuccessful(r.status);
+}
+
+function isStatusCodeError(err: any): err is StatusCodeError {
+    const r = err as Partial<StatusCodeError>
+    return r.code != null && r.message != null;
 }
 
 export function HandleErrorResponse(e: any) {
-    if (e instanceof StatusCodeError) {
+    if (isStatusCodeError(e)) {
         return StatusCodeErrorResponse(e);
     } else if (typeof e === 'string' || e instanceof String) {
         return StringErrorResponse(e);
@@ -64,19 +70,19 @@ export function HandleErrorResponse(e: any) {
 }
 
 export function StatusCodeErrorResponse(err: StatusCodeError): ErrorResponse {
-    return { status: err.code, errorMessage: err.message };
+    return { status: err.code, errorMessage: err.message, isError: true };
 }
 
 export function GeneralErrorResponse(error: Error, status = StatusCode.InternalServerError): ErrorResponse {
-    return { status, errorMessage: error.message, error };
+    return { status, errorMessage: error.message, error, isError: true };
 }
 
 export function StringErrorResponse(errorMessage: string | String, status = StatusCode.InternalServerError): ErrorResponse {
-    return { status, errorMessage: errorMessage + "" };
+    return { status, errorMessage: errorMessage + "", isError: true };
 }
 
 export function ErrorResponse(status: StatusCode, errorMessage?: string, error?: any): ErrorResponse {
-    return { status, errorMessage, error };
+    return { status, errorMessage, error, isError: true };
 }
 
 export function BadRequest(errorMessage: string, error?: any) {
@@ -106,6 +112,8 @@ export class StatusCodeError extends Error {
         this.code = code;
     }
 }
+
+
 
 // Syntax of type A & type B more or less just merges them
 // Add any request properties here so that we don't have to use any

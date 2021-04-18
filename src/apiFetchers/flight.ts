@@ -1,4 +1,4 @@
-import { responseIsErrorResponse } from "../common/expresstypes";
+import { isErrorResponse } from "../common/expresstypes";
 import { createHeaders, getContent, HeadersType } from "./utility";
 
 //STILL TO DO: SUBSCRIBE RAPIDAPI KEY TO SKYSCANNER API (whoever currently owns the key)
@@ -18,7 +18,7 @@ export const getFlights = async (req: FlightRequest) => {
     const originPlaces = await getPlaces(placeRequestObject);
     placeRequestObject.placeName = req.destinationPlace;
     const destinationPlaces = await getPlaces(placeRequestObject);
-    if (responseIsErrorResponse(originPlaces) || responseIsErrorResponse(destinationPlaces)) {
+    if (isErrorResponse(originPlaces) || isErrorResponse(destinationPlaces)) {
         return;
     }
 

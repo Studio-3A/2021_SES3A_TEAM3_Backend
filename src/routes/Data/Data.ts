@@ -35,8 +35,8 @@ dataRouter.get('/hotel/details', async (req: Request<unknown, unknown, unknown, 
   res.send(hotelData);
 });
 
-dataRouter.get('/place/nearby', async (req: Request<unknown, unknown, unknown, NearbyPlacesInput>, res: Response) => {
-  const nearbyInput: NearbyPlacesInput = req.query;
+dataRouter.post('/place/nearby', async (req: Request<unknown, unknown, NearbyPlacesInput, unknown>, res: Response) => {
+  const nearbyInput: NearbyPlacesInput = req.body;
   const placesData = await getPlacesByLocation(nearbyInput);
   res.send(placesData);
 });

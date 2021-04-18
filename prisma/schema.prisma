@@ -8,15 +8,15 @@ datasource db {
 }
 
 model User {
-  id      String   @id @db.VarChar(255)
-  Trip    Trip[]
+  id        String   @id @db.VarChar(255)
+  Trips    Trip[]
 }
 
 model Trip {
-  id    Int   @id @default(autoincrement())
-  userId String  @unique @db.VarChar(255)
-  TripLeg TripLeg[]
-  User  User  @relation(fields: [userId], references: [id])
+  id        Int   @id @default(autoincrement())
+  userId    String  @unique @db.VarChar(255)
+  TripLegs  TripLeg[]
+  User      User  @relation(fields: [userId], references: [id])
 }
 
 model TripLeg {

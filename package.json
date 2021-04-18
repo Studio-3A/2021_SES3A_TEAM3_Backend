@@ -8,7 +8,7 @@
     "build": "npx prisma generate && tsc",
     "start:dev": "nodemon -L dist/index.js",
     "build:dev": "tsc --watch --preserveWatchOutput",
-    "dev": "npm run schema && concurrently \"npm:build:dev\" \"npm:start:dev\"",
+    "dev": "concurrently \"npm:build:dev\" \"npm:start:dev\"",
     "schema": "npm run schema:sync && npm run schema:build",
     "schema:sync": "prisma introspect",
     "schema:build": "prisma generate",

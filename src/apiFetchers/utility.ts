@@ -51,7 +51,6 @@ async function makeRequest<T>(method: RequestMethod, url: string, errorMessage?:
             } catch (e) {
 
             }
-
         }
         // if it fails, we'll take note of the status code
         status = response.status;
@@ -68,18 +67,20 @@ async function makeRequest<T>(method: RequestMethod, url: string, errorMessage?:
 }
 
 export const distanceBetweenTwoCoordinates = (x: Coordinate, y: Coordinate) => {  // generally used geo measurement function
-    var R = 6378.137; // Radius of earth in KM
+    const R = 6378.137; // Radius of earth in KM
     const rads = Math.PI / 180;
-    var dLat = (y.lat - x.lat) * rads * 0.5;
-    var dLon = (y.lng - x.lng) * rads * 0.5;
-    var a = Math.sin(dLat) * Math.sin(dLat) +
-        Math.cos(x.lat * rads) * Math.cos(y.lat * rads) *
-        Math.sin(dLon) * Math.sin(dLon);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    var d = R * c;
+    const dLat = (y.lat - x.lat) * rads * 0.5;
+    const dLon = (y.lng - x.lng) * rads * 0.5;
+    const dLatSin = Math.sin(dLat);
+    const dLonSin = Math.sin(dLon);
+    const a = dLatSin * dLatSin + Math.cos(x.lat * rads) * Math.cos(y.lat * rads) * dLonSin * dLonSin;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c;
     return d * 1000; // meters
 }
 
 export const getMidpointBetweenTwoCoordinates = (x: Coordinate, y: Coordinate): Coordinate => {  // generally used geo measurement function
     return { lat: (x.lat + y.lat) * 0.5, lng: (x.lng + y.lng) * 0.5 }
 }
+
+export type GoogleResponseStatus = "OK" | "ZERO_RESULTS" | "OVER_QUERY_LIMIT" | "REQUEST_DENIED" | "INVALID_REQUEST" | "UNKNOWN_ERROR";

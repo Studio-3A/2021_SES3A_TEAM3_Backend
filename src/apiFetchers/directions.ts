@@ -1,7 +1,7 @@
 import { Coordinate, coordinatesAreValid } from "../common/objects";
-import { getContent } from "./utility";
+import { getContent, GoogleResponseStatus } from "./utility";
 import keys from '../config/keys.json';
-import { HandleErrorResponse, StatusCode, StatusCodeError } from "../common/expresstypes";
+import { BadRequest, HandleErrorResponse, isErrorResponse, StatusCode, StatusCodeError } from "../common/expresstypes";
 
 const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?key=${keys.directions}`;
 
@@ -44,7 +44,9 @@ export const getDirections = async (req: DirectionsRequest) => {
         if (req.transitModes != null && req.transitModes.length > 0) params.push(`transit_mode=${req.transitModes.join("|")}`);
         if (req.travelModes != null && req.travelModes.length > 0) params.push(`&mode=${req.travelModes.join("|")}`);
 
-        return await getContent<DirectionsResponse>(`${directionsUrl + "&" + params.join("&")}`, "Getting directions failed.");
+        const resp = await getContent<DirectionsResponse>(`${directionsUrl + "&" + params.join("&")}`, "Getting directions failed.");
+        if (!isErrorResponse(resp) && resp.status !== "OK" && resp.status !== "ZERO_RESULTS") return BadRequest(resp.status, resp);
+        return resp;
     } catch (e) {
         return HandleErrorResponse(e);
     }
@@ -96,8 +98,7 @@ export interface FeatureAvoid {
     indoor?: boolean;
 }
 
-export type DirectionsResponseStatus = "OK" | "NOT_FOUND" | "ZERO_RESULTS" | "MAX_WAYPOINTS_EXCEEDED" | "MAX_ROUTE_LENGTH_EXCEEDED" |
-    "INVALID_REQUEST" | "OVER_DAILY_LIMIT" | "OVER_QUERY_LIMIT" | "REQUEST_DENIED" | "UNKNOWN_ERROR";
+export type DirectionsResponseStatus = "NOT_FOUND" | "MAX_WAYPOINTS_EXCEEDED" | "MAX_ROUTE_LENGTH_EXCEEDED" | "OVER_DAILY_LIMIT" | GoogleResponseStatus;
 
 export interface DirectionsResponse {
     status: DirectionsResponseStatus;

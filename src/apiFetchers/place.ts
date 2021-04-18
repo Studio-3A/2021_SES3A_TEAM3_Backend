@@ -1,4 +1,4 @@
-import { getContent } from "./utility";
+import { getContent, GoogleResponseStatus } from "./utility";
 import keys from '../config/keys.json';
 import { Coordinate } from "../common/objects";
 import { BadRequest, isErrorResponse } from "../common/expresstypes";
@@ -6,7 +6,8 @@ import { BadRequest, isErrorResponse } from "../common/expresstypes";
 const nearbyPlacesSearchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${keys.placesbit}`;
 
 const getPlaces = async (params: string) => {
-    const resp = await getContent<PlacesDataResponse>(`${nearbyPlacesSearchUrl}&${params}`, "failed to find any nearby places.");
+    const resp = await getContent<PlacesDataResponse>(`${nearbyPlacesSearchUrl}&${params}`, "Failed to find any nearby places.");
+    // google may return valid responses but the responses themselves may have actual non-ok responses
     if (!isErrorResponse(resp) && resp.status !== "OK" && resp.status !== "ZERO_RESULTS") return BadRequest(resp.status, resp);
     return resp;
 };
@@ -38,11 +39,11 @@ export const getRefinedPlaces = (places: Place[]) => {
         const types = place.types;
         if (types == null || types.length === 0) return;
         for (const type of types) {
-            const weWantToGoToThisPlace = !!PLACES_TO_GO.find(t => t === type);
+            const weWantToGoToThisPlace = PLACES_TO_GO.find(t => t === type);
             if (weWantToGoToThisPlace) {
                 // if its a place we want to go to, make sure if the place a food place by rechecking types
                 // TODO: simplify the check to make it not O(n*m)
-                if (types.find(t => !!FOOD_PLACES_TO_GO.find(food => food === t))) organisedPlaces.food.push(place);
+                if (types.find(t => FOOD_PLACES_TO_GO.find(food => food === t))) organisedPlaces.food.push(place);
                 else organisedPlaces.nonFood.push(place);
                 break;
             }
@@ -65,11 +66,9 @@ type Price = 0 | 1 | 2 | 3 | 4;
 
 export interface PlacesDataResponse {
     results: Place[];
-    status: PlaceResponseStatus;
+    status: GoogleResponseStatus;
     next_page_token?: string;
 }
-
-type PlaceResponseStatus = "OK" | "ZERO_RESULTS" | "OVER_QUERY_LIMIT" | "REQUEST_DENIED" | "INVALID_REQUEST" | "UNKNOWN_ERROR";
 
 export interface Place {
     business_status?: BusinessStatus;

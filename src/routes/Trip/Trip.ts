@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getPlacesByLocation, getRefinedPlaces, NearbyPlacesInput, Place, RefinedPlaces } from '../../apiFetchers/place';
+import { getPlacesByLocation, getRefinedPlaces, NearbyPlacesInput, Place, PlaceType, RefinedPlaces } from '../../apiFetchers/place';
 import { distanceBetweenTwoCoordinates, getMidpointBetweenTwoCoordinates } from '../../apiFetchers/utility';
 import { BadRequest, HandleErrorResponse, isErrorResponse, StatusCode, StatusCodeError } from '../../common/expresstypes';
 import { Coordinate, coordinatesAreValid } from '../../common/objects';
@@ -33,19 +33,19 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
     const placesInput: NearbyPlacesInput = { ...centre, radius, queryByPrice: false };
     let allPlaces: Place[] = [];
 
-    const doStuff = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
-      if (iteration > 2) return;
+    const getPlaces = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
+      if (iteration > 4) return;
       let places = await getPlacesByLocation({ ...placesInput, queryByPrice, pagetoken });
       if (!isErrorResponse(places)) {
         allPlaces = allPlaces.concat(places.results);
         if (places.next_page_token) {
-          await doStuff(queryByPrice, places.next_page_token, iteration + 1);
+          await getPlaces(queryByPrice, places.next_page_token, iteration + 1);
         }
       }
     }
 
-    await doStuff(true);
-    await doStuff(false);
+    await getPlaces(true);
+    await getPlaces(false);
 
     const actual = getRefinedPlaces(allPlaces);
     const trip: Trip = { trip: generateTrip(actual, startDate, endDate) };
@@ -73,7 +73,8 @@ interface Activity {
   time: number,
   duration: number;
   people?: string,
-  rating?: number
+  rating?: number,
+  types: PlaceType[];
 }
 
 const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
@@ -112,6 +113,7 @@ const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
 
     if (currentPlaceDidChange && currentPlace) {
       activities.push({
+        types: currentPlace.types,
         name: currentPlace.name,
         rating: currentPlace.rating,
         price: currentPlace.price_level,

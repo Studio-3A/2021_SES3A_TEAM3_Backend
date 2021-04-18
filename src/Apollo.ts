@@ -10,9 +10,13 @@ const apolloServer = new ApolloServer({
     resolvers,
     context: ({ req, res }: { req: Request, res: Response }) => ({
         prisma: new PrismaClient(),
-        // a: console.log(req.session),
         session: req.session,
-    })
+    }),
+    playground: {
+        settings: {
+          "request.credentials": "include"
+        }
+    }
 });
 
 export default apolloServer;

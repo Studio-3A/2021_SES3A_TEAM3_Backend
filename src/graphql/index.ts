@@ -23,7 +23,7 @@ export const typeDefs = [
 
 export const resolvers = {
   Query: {
-    myID: (parent: any, args: any, context: ApolloContext, info: any) => context?.session.uid,
+    myID: (parent: any, args: any, context: ApolloContext, info: any) => context?.session?.uid,
     ...User.queries,
   },
   Mutation: {

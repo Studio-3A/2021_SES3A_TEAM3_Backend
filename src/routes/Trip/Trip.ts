@@ -1,8 +1,9 @@
 import express, { Request, Response } from 'express';
 import { getPlacesByLocation, getRefinedPlaces, NearbyPlacesInput, Place, PlaceType, RefinedPlaces } from '../../apiFetchers/place';
-import { distanceBetweenTwoCoordinates, getMidpointBetweenTwoCoordinates } from '../../apiFetchers/utility';
-import { BadRequest, HandleErrorResponse, isErrorResponse, StatusCode, StatusCodeError } from '../../common/expresstypes';
-import { Coordinate, coordinatesAreValid } from '../../common/objects';
+import {
+  handleError, isErrorResponse, StatusCode, StatusCodeError,
+  Coordinate, coordinatesAreValid, distanceBetweenTwoCoordinates, getMidpointBetweenTwoCoordinates
+} from 'travelogue-utility';
 
 export const tripRouter = express.Router({
   strict: true,
@@ -52,7 +53,7 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
 
     res.send(trip);
   } catch (e) {
-    res.send(HandleErrorResponse(e));
+    res.send(handleError(e));
   }
 });
 

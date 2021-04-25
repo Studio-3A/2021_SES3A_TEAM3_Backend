@@ -37,6 +37,7 @@
     "firebase-admin": "^9.5.0",
     "graphql": "^15.5.0",
     "prisma": "^2.20.1",
+    "travelogue-utility": "^0.1.2",
     "tslib": "^2.2.0"
   },
   "devDependencies": {

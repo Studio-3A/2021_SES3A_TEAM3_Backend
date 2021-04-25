@@ -1,5 +1,5 @@
-import { isErrorResponse } from "../common/expresstypes";
-import { createHeaders, getContent, HeadersType } from "./utility";
+import { getContent, isErrorResponse } from "travelogue-utility"
+import { createHeaders, HeadersType } from "./utility";
 
 //STILL TO DO: SUBSCRIBE RAPIDAPI KEY TO SKYSCANNER API (whoever currently owns the key)
 const skyscannerUrl = 'https://skyscanner-skyscanner-flight-search-v1.p.rapidapi.com/apiservices/';
@@ -29,13 +29,17 @@ export const getFlights = async (req: FlightRequest) => {
     let qs = `browsequotes/v1.0/${req.country}/${req.currency}/${req.locale}/${req.originPlace}/${req.destinationPlace}/${req.outboundPartialDate}`;
     qs += `?inboundpartialdate=${req.inboundPartialDate}`;
     const headers = createHeaders(HeadersType.Flights);
-    return getContent<FlightDetailsResponse>(`${skyscannerUrl}${qs}`, `We weren't able to find any flights for ${req.originPlace} to ${req.destinationPlace}`, headers)
+    const url = `${skyscannerUrl}${qs}`;
+    const errorMessage = `We weren't able to find any flights for ${req.originPlace} to ${req.destinationPlace}`;
+    return getContent<FlightDetailsResponse>({ url, errorMessage, headers });
 }
 
 export const getPlaces = async (req: PlaceRequest) => {
     const qs = `autosuggest/v1.0/${req.country}/${req.currency}/${req.locale}/?query=${req.placeName}`;
     const headers = createHeaders(HeadersType.Flights);
-    return getContent<PlaceDetailsResponse>(`${skyscannerUrl}${qs}`, `Unable to find any places for query: ${req.placeName}`, headers);
+    const url = `${skyscannerUrl}${qs}`;
+    const errorMessage = `Unable to find any places for query: ${req.placeName}`;
+    return getContent<PlaceDetailsResponse>({ url, errorMessage, headers });
 }
 
 export interface FlightRequest {

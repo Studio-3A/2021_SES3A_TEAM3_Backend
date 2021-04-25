@@ -1,14 +1,13 @@
-import { getContent, GoogleResponseStatus } from "./utility";
+import { Coordinate, badRequest, isErrorResponse, getContent } from "travelogue-utility";
+import { GoogleResponseStatus } from "./utility";
 import keys from '../config/keys.json';
-import { Coordinate } from "../common/objects";
-import { BadRequest, isErrorResponse } from "../common/expresstypes";
 
 const nearbyPlacesSearchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${keys.placesbit}`;
 
 const getPlaces = async (params: string) => {
-    const resp = await getContent<PlacesDataResponse>(`${nearbyPlacesSearchUrl}&${params}`, "Failed to find any nearby places.");
+    const resp = await getContent<PlacesDataResponse>({ url: `${nearbyPlacesSearchUrl}&${params}`, errorMessage: "Failed to find any nearby places." });
     // google may return valid responses but the responses themselves may have actual non-ok responses
-    if (!isErrorResponse(resp) && resp.status !== "OK" && resp.status !== "ZERO_RESULTS") return BadRequest(resp.status, resp);
+    if (!isErrorResponse(resp) && resp.status !== "OK" && resp.status !== "ZERO_RESULTS") return badRequest(resp.status, resp);
     return resp;
 };
 

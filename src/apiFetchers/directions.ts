@@ -1,7 +1,9 @@
-import { Coordinate, coordinatesAreValid } from "../common/objects";
-import { getContent, GoogleResponseStatus } from "./utility";
+import {
+    badRequest, handleError, isErrorResponse, StatusCode, StatusCodeError, getContent,
+    Coordinate, coordinatesAreValid
+} from "travelogue-utility";
+import { GoogleResponseStatus } from "./utility";
 import keys from '../config/keys.json';
-import { BadRequest, HandleErrorResponse, isErrorResponse, StatusCode, StatusCodeError } from "../common/expresstypes";
 
 const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?key=${keys.directions}`;
 
@@ -43,12 +45,13 @@ export const getDirections = async (req: DirectionsRequest) => {
 
         if (req.transitModes != null && req.transitModes.length > 0) params.push(`transit_mode=${req.transitModes.join("|")}`);
         if (req.travelModes != null && req.travelModes.length > 0) params.push(`&mode=${req.travelModes.join("|")}`);
-
-        const resp = await getContent<DirectionsResponse>(`${directionsUrl + "&" + params.join("&")}`, "Getting directions failed.");
-        if (!isErrorResponse(resp) && resp.status !== "OK" && resp.status !== "ZERO_RESULTS") return BadRequest(resp.status, resp);
+        const url = `${directionsUrl + "&" + params.join("&")}`;
+        const errorMessage = "Getting directions failed.";
+        const resp = await getContent<DirectionsResponse>({ url, errorMessage });
+        if (!isErrorResponse(resp) && resp.status !== "OK" && resp.status !== "ZERO_RESULTS") return badRequest(resp.status, resp);
         return resp;
     } catch (e) {
-        return HandleErrorResponse(e);
+        return handleError(e);
     }
 };
 

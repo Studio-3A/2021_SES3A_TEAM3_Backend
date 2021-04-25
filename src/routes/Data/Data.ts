@@ -4,7 +4,7 @@ import { getHotelLocations, getHotelsByLocation, HotelLocationInput, HotelDetail
 import { getFlights, FlightRequest } from '../../apiFetchers/flight'
 import { getPlacesByLocation, NearbyPlacesInput } from '../../apiFetchers/place';
 import { DirectionsRequest, getDirections } from "../../apiFetchers/directions";
-import { Coordinate } from '../../common/objects';
+import { Coordinate } from 'travelogue-utility';
 
 export const dataRouter = express.Router({
   strict: true,

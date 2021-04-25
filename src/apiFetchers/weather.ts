@@ -1,12 +1,15 @@
-import { HandleErrorResponse as HandleError, StatusCode, StatusCodeError } from '../common/expresstypes';
-import { Coordinate, coordinatesAreValid } from '../common/objects';
+import {
+  getContent, handleError, StatusCode, StatusCodeError,
+  Coordinate, coordinatesAreValid
+} from "travelogue-utility";
 import keys from '../config/keys.json';
-import { getContent } from "./utility";
 
 const weatherbitUrl: string = `https://api.weatherbit.io/v2.0/forecast/daily?key=${keys.weatherbit}`;
 
 const getWeatherForecast = async (params: string) => {
-  return await getContent<WeatherDataResponse>(`${weatherbitUrl}&${params}`, "Getting the weather failed.");
+  const url = `${weatherbitUrl}&${params}`;
+  const errorMessage = "Getting the weather failed."
+  return await getContent<WeatherDataResponse>({ url, errorMessage });
 };
 
 //Example: getWeatherForecastByLocation("New York", "US", 7);
@@ -15,7 +18,7 @@ export const getWeatherForecastByLocation = (location: WeatherLocationInput) => 
     checkWeatherLocationInputIsValid(location);
     return getWeatherForecast(`city=${location.city}&country=${location.country}&days=${location.days}`);
   } catch (e) {
-    return HandleError(e);
+    return handleError(e);
   }
 };
 
@@ -25,7 +28,7 @@ export const getWeatherForecastByLongLat = (longLat: Coordinate) => {
     checkCoordinateInputIsValid(longLat);
     return getWeatherForecast(`lat=${longLat.lat}&lon=${longLat.lng}`);
   } catch (e) {
-    return HandleError(e);
+    return handleError(e);
   }
 };
 

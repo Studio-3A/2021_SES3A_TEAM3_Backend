@@ -6,7 +6,7 @@ import { StatusCode } from "travelogue-utility"
 import Prisma, { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient();
 
-const userTestData: Prisma.User = { id: "s133a1" };
+const userTestData: Prisma.User = { id: "s133a1", firstName: "aa", lastName: "aaa" };
 
 // TODO: Handle Specific Errors returned from Prisma such as an unaccessible database
 export class UserController extends CrudController {

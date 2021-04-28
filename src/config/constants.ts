@@ -8,3 +8,6 @@ export const DATABASE = {
     USERNAME: process.env.DATABASE_USERNAME || "root",
     PASSWORD: process.env.DATABASE_PASSWORD || "password",
 };
+
+export const DATABASE_CONNECTION_STRING = "mysql://"+process.env.DATABASE_USERNAME+":"+
+process.env.DATABASE_PASSWORD+"@"+process.env.DATABASE_HOST+"3306/travelogue";

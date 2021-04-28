@@ -2,6 +2,7 @@
 src/config/serviceAccountKey.json
 
 # Any sort of keys or secrets
+.env
 src/config/keys.json
 
 # Logs

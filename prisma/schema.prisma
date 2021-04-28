@@ -3,26 +3,138 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_CONNECTION_STRING")
 }
 
 model User {
-  id        String   @id @db.VarChar(255)
-  Trips    Trip[]
+  id        String   @id @db.VarChar(191)
+  firstName String   @db.VarChar(191)
+  lastName  String   @db.VarChar(191)
+  bookings  Booking[]
+  Trips     Trip[]
+}
+
+model BookingEntry {
+  id            Int @id @default(autoincrement())
+  bookingId     Int 
+  booking       Booking @relation(fields: [bookingId], references: [id])
+  bookingTypeId Int 
+  bookingType   BookingType?
+  description   String @db.VarChar(255)
+  tripId        Int
+  Trip          Trip @relation(fields: [tripId], references: [id]) 
+  destinationId Int 
+  points        Int 
+}
+
+model BookingType {
+  id             Int @id @default(autoincrement())
+  bookingEntryId Int 
+  bookingEntry   BookingEntry @relation(fields: [bookingEntryId], references: [id])
+  label          String @db.VarChar(191)
+  description    String @db.Text
+}
+
+model Booking {
+  id             Int @id @default(autoincrement())
+  userId         String @db.VarChar(191)
+  user           User @relation(fields: [userId], references: [id]) 
+  Cost           Float
+  referenceId    String @db.VarChar(191)
+  bookingEntryId Int
+  bookingEntries BookingEntry[]
 }
 
 model Trip {
-  id        Int   @id @default(autoincrement())
-  userId    String  @unique @db.VarChar(255)
-  TripLegs  TripLeg[]
-  User      User  @relation(fields: [userId], references: [id])
+  id           Int            @id @default(autoincrement())
+  userId       String         @unique @db.VarChar(191)
+  tripLegs     TripLeg[]
+  user         User           @relation(fields: [userId], references: [id])
+  bookingEntry BookingEntry[]
 }
 
 model TripLeg {
-  id        Int   @id @default(autoincrement())
-  tripId    Int
-  Trip      Trip  @relation(fields: [tripId], references: [id])
-  beginDate DateTime?
-  endDate   DateTime?
+  id            Int   @id @default(autoincrement())
+  tripId        Int
+  Trip          Trip  @relation(fields: [tripId], references: [id])
+  destinationId Int 
+  destination   Destination @relation(fields: [destinationId], references: [id])
+  beginDate     DateTime?
+  endDate       DateTime?
+}
+
+model Destination {
+  id            Int    @id @default(autoincrement())
+  geolocationId Int 
+  tripLegs      TripLeg[]
+  activities    Activity[]
+  hotels        Hotel[]
+  name          String @db.VarChar(191)
+  state         String @db.VarChar(191)
+  region        String @db.VarChar(191)
+  country       String @db.VarChar(191)
+}
+
+model Activity {
+  id            Int @id @default(autoincrement())
+  type          String @db.VarChar(191)
+  destinationId Int 
+  destination   Destination @relation(fields: [destinationId], references: [id])
+  venueId       Int
+  venues        Venue[] 
+  startTime     DateTime
+  endTime       DateTime
+  title         String @db.VarChar(191)
+  description   String @db.VarChar(255)
+}
+
+model Venue {
+  id            Int @id @default(autoincrement())
+  activity      Activity @relation(fields: [activityId], references: [id])
+  activityId    Int 
+  name          String @db.VarChar(191)
+  website       String @db.VarChar(191)
+  phone         String @db.VarChar(191)
+  email         String @db.VarChar(191)
+}
+
+model Hotel {
+  id              Int @id
+  name            String @db.VarChar(191)
+  starRating      Int
+  streetAddress   String @db.VarChar(191)
+  locality        String @db.VarChar(191)
+  postalCode      String @db.VarChar(191)
+  region          String @db.VarChar(191)
+  countryName     String @db.VarChar(191)
+  countryCode     String @db.VarChar(191)
+  hotelLocationId Int
+  hotelLocation   HotelLocation @relation(fields: [hotelLocationId], references: [destinationId])
+  rooms           HotelRoom[]
+  destinationId Int 
+  destination   Destination @relation(fields: [destinationId], references: [id])
+}
+
+model HotelRoom {
+  id            Int @id @default(autoincrement())
+  hotelId       Int 
+  hotel         Hotel @relation(fields: [hotelId], references: [id])
+  roomCapacity  Int 
+  internet      Boolean
+  refrigeration Boolean 
+  televsision   Boolean
+  Bath          Boolean
+  Spa           Boolean
+  Balcony       Boolean
+}
+
+model HotelLocation {
+  destinationId Int @id 
+  geolocationId Int 
+  name          String @db.VarChar(191)
+  type          String @db.VarChar(191)
+  latitude      Float
+  longitude     Float 
+  hotel         Hotel[]
 }

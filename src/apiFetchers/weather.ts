@@ -2,9 +2,9 @@ import {
   getContent, handleError, StatusCode, StatusCodeError,
   Coordinate, coordinatesAreValid
 } from "travelogue-utility";
-import keys from '../config/keys.json';
+import { WEATHERBIT_KEY } from "../config/constants";
 
-const weatherbitUrl: string = `https://api.weatherbit.io/v2.0/forecast/daily?key=${keys.weatherbit}`;
+const weatherbitUrl: string = `https://api.weatherbit.io/v2.0/forecast/daily?key=${WEATHERBIT_KEY}`;
 
 const getWeatherForecast = async (params: string) => {
   const url = `${weatherbitUrl}&${params}`;

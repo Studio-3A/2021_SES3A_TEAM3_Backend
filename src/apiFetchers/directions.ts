@@ -2,10 +2,10 @@ import {
     badRequest, handleError, isErrorResponse, StatusCode, StatusCodeError, getContent,
     Coordinate, coordinatesAreValid
 } from "travelogue-utility";
+import { GOOGLE_DIRECTIONS_KEY } from "../config/constants";
 import { GoogleResponseStatus } from "./utility";
-import keys from '../config/keys.json';
 
-const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?key=${keys.directions}`;
+const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?key=${GOOGLE_DIRECTIONS_KEY}`;
 
 const DEFAULT_UNIT: DistanceUnit = "metric";
 

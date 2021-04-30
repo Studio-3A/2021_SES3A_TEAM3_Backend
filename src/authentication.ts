@@ -1,6 +1,6 @@
 import FirebaseAdmin, { ServiceAccount } from "firebase-admin";
 import { Request, Response } from "./common/expresstypes";
-import keys from "./config/keys.json";
+import serviceAccountKey from "./config/serviceAccountKey.json";
 
 const cookieOptions = {
     maxAge: 60 * 60 * 1000, /* 1 hour */
@@ -36,7 +36,7 @@ export async function parseAuthSession(req: Request, res: Response, next: Functi
 };
 
 FirebaseAdmin.initializeApp({
-    credential: FirebaseAdmin.credential.cert(<ServiceAccount>keys.serviceAccountKey),
+    credential: FirebaseAdmin.credential.cert(<ServiceAccount>serviceAccountKey),
 });
 
 export default FirebaseAdmin;

@@ -1,4 +1,4 @@
-import keys from "../config/keys.json"
+import { RAPIDAPI_KEY } from "../config/constants";
 
 export enum HeadersType {
     Hotels,
@@ -10,12 +10,12 @@ export function createHeaders(type: HeadersType): HeadersInit {
     switch (type) {
         case HeadersType.Hotels:
             return {
-                'x-rapidapi-key': keys.rapidapi,
+                'x-rapidapi-key': RAPIDAPI_KEY,
                 'x-rapidapi-host': "hotels4.p.rapidapi.com"
             };
         case HeadersType.Flights:
             return {
-                'x-rapidapi-key': keys.rapidapi,
+                'x-rapidapi-key': RAPIDAPI_KEY,
                 'x-rapidapi-host': "skyscanner-skyscanner-flight-search-v1.p.rapidapi.com",
             }
         default:

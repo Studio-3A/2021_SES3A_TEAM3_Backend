@@ -1,8 +1,8 @@
 import { Coordinate, badRequest, isErrorResponse, getContent } from "travelogue-utility";
+import { GOOGLE_PLACES_KEY } from "../config/constants";
 import { GoogleResponseStatus } from "./utility";
-import keys from '../config/keys.json';
 
-const nearbyPlacesSearchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${keys.placesbit}`;
+const nearbyPlacesSearchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=${GOOGLE_PLACES_KEY}`;
 
 const getPlaces = async (params: string) => {
     const resp = await getContent<PlacesDataResponse>({ url: `${nearbyPlacesSearchUrl}&${params}`, errorMessage: "Failed to find any nearby places." });

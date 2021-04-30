@@ -1,8 +1,10 @@
-# Firebase Admin Service Account - deprecated, should be part of keys.json below
+# Firebase Admin Service Account
 src/config/serviceAccountKey.json
 
 # Any sort of keys or secrets
 .env
+
+# THIS JSON SHOULD NOT EXIST ANYMORE 
 src/config/keys.json
 
 # Logs

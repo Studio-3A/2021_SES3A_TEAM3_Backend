@@ -1,4 +1,4 @@
-import { Coordinate, badRequest, isErrorResponse, getContent } from "travelogue-utility";
+import { Coordinate, badRequest, isErrorResponse, getContent, PlaceType, PlacesToGo } from "travelogue-utility";
 import { GOOGLE_PLACES_KEY } from "../config/constants";
 import { GoogleResponseStatus } from "./utility";
 
@@ -91,32 +91,10 @@ export interface Place {
 
 export type BusinessStatus = "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY";
 
-export type PlaceType = QueryPlaceType | AdditionalResultPlaceType;
-
-export type QueryPlaceType = 'accounting' | 'airport' | 'atm' | 'bank' | 'bar' | 'beauty_salon' | 'bicycle_store' | 'book_store'
-    | 'bus_station' | 'car_dealer' | 'car_rental' | 'car_repair' | 'car_wash' | 'casino' | 'cemetery' | 'church' | 'clothing_store' | 'convenience_store'
-    | 'courthouse' | 'dentist' | 'department_store' | 'doctor' | 'drugstore' | 'electrician' | 'electronics_store' | 'embassy' | 'fire_station' | 'florist' | 'funeral_home' | 'furniture_store'
-    | 'gas_station' | 'gym' | 'hair_care' | 'hardware_store' | 'hindu_temple' | 'home_goods_store' | 'hospital' | 'insurance_agency' | 'jewelry_store' | 'laundry' | 'lawyer'
-    | 'light_rail_station' | 'liquor_store' | 'local_government_office' | 'locksmith' | 'meal_delivery' | 'mosque' | 'movie_rental' | 'moving_company'
-    | 'painter' | 'parking' | 'pet_store' | 'pharmacy' | 'physiotherapist' | 'plumber' | 'police' | 'post_office' | 'primary_school' | 'real_estate_agency' | 'lodging'
-    | 'roofing_contractor' | 'rv_park' | 'school' | 'secondary_school' | 'shoe_store' | 'shopping_mall' | 'stadium' | 'storage' | 'store' | 'subway_station' | 'supermarket'
-    | 'synagogue' | 'taxi_stand' | 'train_station' | 'transit_station' | 'travel_agency' | 'university' | 'veterinary_care' | PlacesToGo;
-
-export type PlacesToGo = 'restaurant' | 'bakery' | 'cafe' | 'meal_takeaway' | NonFoodPlacesToGo;
-
 export const FOOD_PLACES_TO_GO: PlaceType[] = ['restaurant', 'bakery', 'cafe', 'meal_takeaway'];
-
-export type NonFoodPlacesToGo = 'amusement_park' | 'aquarium' | 'art_gallery' | 'movie_theater' | 'museum' | 'park' | 'tourist_attraction' | 'zoo' | 'spa' | 'library' | 'night_club' | 'campground' | 'bowling_alley'
-    | 'city_hall';
 
 export const PLACES_TO_GO: PlaceType[] = ['amusement_park', 'aquarium', 'art_gallery', 'movie_theater', 'restaurant', 'museum', 'park', 'tourist_attraction', 'zoo',
     'bakery', 'spa', 'cafe', 'library', 'night_club', 'campground', 'bowling_alley', 'city_hall', 'landmark', 'natural_feature', 'lodging'];
-
-export type AdditionalResultPlaceType = 'administrative_area_level_1' | 'administrative_area_level_2' | 'administrative_area_level_3' | 'administrative_area_level_4' | 'administrative_area_level_5'
-    | 'archipelago' | 'colloquial_area' | 'continent' | 'country' | 'establishment' | 'finance' | 'floor' | 'food' | 'general_contractor' | 'geocode' | 'health' | 'intersection' | 'landmark'
-    | 'locality' | 'natural_feature' | 'neighborhood' | 'place_of_worship' | 'plus_code' | 'point_of_interest' | 'political' | 'post_box' | 'postal_code' | 'postal_code_prefix' | 'postal_code_suffix'
-    | 'postal_town' | 'premise' | 'room' | 'route' | 'street_address' | 'street_number' | 'sublocality' | 'sublocality_level_1' | 'sublocality_level_2' | 'sublocality_level_3' | 'sublocality_level_4'
-    | 'sublocality_level_5' | 'subpremise' | 'town_square';
 
 export interface Photo {
     height: number;

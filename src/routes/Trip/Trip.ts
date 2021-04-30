@@ -1,27 +1,14 @@
 import express, { Request, Response } from 'express';
-import { getPlacesByLocation, getRefinedPlaces, NearbyPlacesInput, Place, PlaceType, RefinedPlaces } from '../../apiFetchers/place';
+import { getPlacesByLocation, getRefinedPlaces, NearbyPlacesInput, Place, RefinedPlaces } from '../../apiFetchers/place';
 import {
   handleError, isErrorResponse, StatusCode, StatusCodeError,
-  Coordinate, coordinatesAreValid, distanceBetweenTwoCoordinates, getMidpointBetweenTwoCoordinates
+  coordinatesAreValid, distanceBetweenTwoCoordinates, getMidpointBetweenTwoCoordinates,
+  Activity, TripGenerationInputs, Trip
 } from 'travelogue-utility';
 
 export const tripRouter = express.Router({
   strict: true,
 });
-
-interface TripGenerationInputs {
-  numberOfPeople?: number; // optional bc we dont use them right now
-  budget?: number;
-  startDate: number;
-  endDate: number;
-  startLocation: Coordinate;
-  endLocation: Coordinate;
-
-}
-
-interface Trip {
-  trip: Activity[];
-}
 
 tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInputs, unknown>, res: Response) => {
   try {
@@ -66,18 +53,6 @@ const CheckInputIsValid = (input: TripGenerationInputs) => {
   }
 }
 
-interface Activity {
-  name: string,
-  price?: number,
-  location: string,
-  description?: string,
-  time: number,
-  duration: number;
-  people?: string,
-  rating?: number,
-  types: PlaceType[];
-}
-
 const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
   const minDuration = 30;
   let maxDuration = end - start > 180 ? 180 : end - start;
@@ -120,7 +95,8 @@ const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
         price: currentPlace.price_level,
         location: currentPlace.vicinity,
         duration,
-        time
+        time,
+        place_id: currentPlace.place_id
       });
 
       if (currentPlace && prevPlace) {

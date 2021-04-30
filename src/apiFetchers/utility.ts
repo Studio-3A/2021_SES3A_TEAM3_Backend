@@ -1,4 +1,5 @@
 import { RAPIDAPI_KEY } from "../config/constants";
+import { HeadersInit } from "node-fetch";
 
 export enum HeadersType {
     Hotels,

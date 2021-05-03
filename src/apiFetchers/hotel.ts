@@ -1,22 +1,25 @@
-import { createHeaders, getContent, HeadersType } from "./utility";
+import { getContent } from "travelogue-utility";
+import { createHeaders, HeadersType } from "./utility";
 
 const hotelLocationsSearchUrl = "https://hotels4.p.rapidapi.com/locations/search";
 const hotelDetailsSearchUrl = "https://hotels4.p.rapidapi.com/properties/list";
 
 export const getLocations = async (params: string) => {
-    return await getContent<HotelLocationDataResponse>(`${hotelLocationsSearchUrl}?${params}`,
-        "failed to find any suitable locations.", createHeaders(HeadersType.Hotels));
+    const url = `${hotelLocationsSearchUrl}?${params}`;
+    const errorMessage = "Failed to find any suitable locations.";
+    const headers = createHeaders(HeadersType.Hotels);
+    return await getContent<HotelLocationDataResponse>({ url, errorMessage, headers });
 };
 
 export const getHotelLocations = (location: HotelLocationInput) => {
-    return getLocations(
-        `query=${location.query}&locale=${location.locale}`
-    );
+    return getLocations(`query=${location.query}&locale=${location.locale}`);
 };
 
 export const getHotelDetails = async (params: string) => {
-    return await getContent<HotelDetailsDataResponse>(`${hotelDetailsSearchUrl}?${params}`,
-        "failed to find any hotels for this location.", createHeaders(HeadersType.Hotels));
+    const url = `${hotelLocationsSearchUrl}?${params}`;
+    const errorMessage = "Failed to find any hotels for this location.";
+    const headers = createHeaders(HeadersType.Hotels);
+    return await getContent<HotelDetailsDataResponse>({ url, errorMessage, headers });
 };
 
 export const getHotelsByLocation = (details: HotelDetailsInput) => {

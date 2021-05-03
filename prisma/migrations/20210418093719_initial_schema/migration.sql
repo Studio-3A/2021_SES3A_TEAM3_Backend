@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE `User` (
-    `id` VARCHAR(255) NOT NULL,
+    `id` VARCHAR(191) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -8,7 +8,7 @@ CREATE TABLE `User` (
 -- CreateTable
 CREATE TABLE `Trip` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `userId` VARCHAR(255) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
 UNIQUE INDEX `Trip.userId_unique`(`userId`),
 
     PRIMARY KEY (`id`)

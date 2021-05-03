@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { Params, StatusCode } from "../../common/expresstypes";
+import { Params } from "../../common/expresstypes";
 import { CrudController } from "../CrudController";
+import { StatusCode } from "travelogue-utility"
 
 import Prisma, { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient();
@@ -28,7 +29,7 @@ export class UserController extends CrudController {
 
             const id = req.params.objectId;
             if (id !== undefined) {
-                const user = await prisma.user.findFirst({ where: {id: id} });
+                const user = await prisma.user.findFirst({ where: { id: id } });
                 if (user !== null) {
                     res.status(StatusCode.OK).json(user);
                 } else {
@@ -53,7 +54,7 @@ export class UserController extends CrudController {
             const userData = req.body;
 
             if (id !== undefined) {
-                const user = await prisma.user.update({ where: {id: id}, data: userData });
+                const user = await prisma.user.update({ where: { id: id }, data: userData });
                 if (user !== null) {
                     res.status(StatusCode.OK).json(user);
                 } else {
@@ -77,11 +78,11 @@ export class UserController extends CrudController {
         try {
             const id = req.params.objectId;
             if (id !== undefined) {
-                const user = await prisma.user.delete({ where: {id: id}});
+                const user = await prisma.user.delete({ where: { id: id } });
                 res.status(StatusCode.NoContent).send(user);
             } else {
                 // CAREFUL: This will delete all users don't run it... 
-                const users = await prisma.user.deleteMany({ where: {id: id}});
+                const users = await prisma.user.deleteMany({ where: { id: id } });
                 res.status(StatusCode.NoContent).send();
             }
 

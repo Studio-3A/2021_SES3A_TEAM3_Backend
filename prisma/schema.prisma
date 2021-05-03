@@ -8,6 +8,7 @@ datasource db {
 }
 
 model User {
+<<<<<<< HEAD
   id        String   @id @db.VarChar(191)
   firstName String   @db.VarChar(191)
   lastName  String   @db.VarChar(191)
@@ -16,41 +17,95 @@ model User {
   deletedAt DateTime?
   bookings  Booking[]
   Trips     Trip[]
+=======
+  id String @id @db.VarChar(191)
+
+  lastSearch SearchTrip?
+  bookings   Booking[]
+  Trips      Trip[]
+>>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
 }
 
 model BookingEntry {
-  id            Int @id @default(autoincrement())
-  bookingId     Int 
-  booking       Booking @relation(fields: [bookingId], references: [id])
-  bookingTypeId Int 
+  id            Int          @id @default(autoincrement())
+  bookingId     Int
+  booking       Booking      @relation(fields: [bookingId], references: [id])
+  bookingTypeId Int
   bookingType   BookingType?
-  description   String @db.VarChar(255)
+  description   String       @db.VarChar(255)
   tripId        Int
+<<<<<<< HEAD
   Trip          Trip @relation(fields: [tripId], references: [id]) 
   destinationId Int 
   points        Int 
   createdAt DateTime? @default(now())
   updatedAt DateTime? @default(now())
+=======
+  Trip          Trip         @relation(fields: [tripId], references: [id])
+  destinationId Int
+  points        Int
+>>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
 }
 
 model BookingType {
-  id             Int @id @default(autoincrement())
-  bookingEntryId Int 
+  id             Int          @id @default(autoincrement())
+  bookingEntryId Int
   bookingEntry   BookingEntry @relation(fields: [bookingEntryId], references: [id])
-  label          String @db.VarChar(191)
-  description    String @db.Text
+  label          String       @db.VarChar(191)
+  description    String       @db.Text
 }
 
 model Booking {
-  id             Int @id @default(autoincrement())
-  userId         String @db.VarChar(191)
-  user           User @relation(fields: [userId], references: [id]) 
+  id             Int            @id @default(autoincrement())
+  userId         String         @db.VarChar(191)
+  user           User           @relation(fields: [userId], references: [id])
   Cost           Float
-  referenceId    String @db.VarChar(191)
+  referenceId    String         @db.VarChar(191)
   bookingEntryId Int
   bookingEntries BookingEntry[]
   createdAt DateTime? @default(now())
   updatedAt DateTime? @default(now())
+}
+
+model SearchTrip {
+  id     Int    @id @default(autoincrement())
+  userId String @db.VarChar(191)
+
+  destintations SearchTripDestintation[]
+  user          User                     @relation(fields: [userId], references: [id])
+}
+
+model SearchTripDestintation {
+  searchTripId  Int    @default(autoincrement())
+  googlePlaceID String
+  name          String
+  rating        Float
+  location      String
+  duration      Int
+  time          BigInt
+
+  trip SearchTrip                  @relation(fields: [searchTripId], references: [id])
+  tags SearchTripDestintationTag[]
+  @@id([searchTripId, googlePlaceID])
+  @@unique([searchTripId, googlePlaceID])
+}
+
+model SearchTripDestintationTag {
+  searchTripId     Int    @default(autoincrement())
+  googlePlaceID    String
+  destinationTagId Int
+
+  trip SearchTripDestintation @relation(fields: [searchTripId, googlePlaceID], references: [searchTripId, googlePlaceID])
+  tag  DestinationTag         @relation(fields: [destinationTagId], references: [id])
+  @@id([searchTripId, googlePlaceID, destinationTagId])
+  @@unique([searchTripId, googlePlaceID, destinationTagId])
+}
+
+model DestinationTag {
+  id        Int    @id @default(autoincrement())
+  googleTag String
+
+  destinations SearchTripDestintationTag[]
 }
 
 model Trip {
@@ -64,10 +119,10 @@ model Trip {
 }
 
 model TripLeg {
-  id            Int   @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   tripId        Int
-  Trip          Trip  @relation(fields: [tripId], references: [id])
-  destinationId Int 
+  Trip          Trip        @relation(fields: [tripId], references: [id])
+  destinationId Int
   destination   Destination @relation(fields: [destinationId], references: [id])
   beginDate     DateTime?
   endDate       DateTime?
@@ -76,28 +131,36 @@ model TripLeg {
 }
 
 model Destination {
-  id            Int    @id @default(autoincrement())
-  geolocationId Int 
+  id            Int        @id @default(autoincrement())
+  geolocationId Int
   tripLegs      TripLeg[]
   activities    Activity[]
   hotels        Hotel[]
+<<<<<<< HEAD
   name          String @db.VarChar(191)
   state         String @db.VarChar(191)
   region        String @db.VarChar(191)
   country       String @db.VarChar(191)
   createdAt DateTime? @default(now())
   updatedAt DateTime? @default(now())
+=======
+  name          String     @db.VarChar(191)
+  state         String     @db.VarChar(191)
+  region        String     @db.VarChar(191)
+  country       String     @db.VarChar(191)
+>>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
 }
 
 model Activity {
-  id            Int @id @default(autoincrement())
-  type          String @db.VarChar(191)
-  destinationId Int 
+  id            Int         @id @default(autoincrement())
+  type          String      @db.VarChar(191)
+  destinationId Int
   destination   Destination @relation(fields: [destinationId], references: [id])
   venueId       Int
-  venues        Venue[] 
+  venues        Venue[]
   startTime     DateTime
   endTime       DateTime
+<<<<<<< HEAD
   title         String @db.VarChar(191)
   description   String @db.VarChar(255)
   createdAt DateTime? @default(now())
@@ -114,34 +177,53 @@ model Venue {
   email         String @db.VarChar(191)
   createdAt DateTime? @default(now())
   updatedAt DateTime? @default(now())
+=======
+  title         String      @db.VarChar(191)
+  description   String      @db.VarChar(255)
+}
+
+model Venue {
+  id         Int      @id @default(autoincrement())
+  activity   Activity @relation(fields: [activityId], references: [id])
+  activityId Int
+  name       String   @db.VarChar(191)
+  website    String   @db.VarChar(191)
+  phone      String   @db.VarChar(191)
+  email      String   @db.VarChar(191)
+>>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
 }
 
 model Hotel {
-  id              Int @id
-  name            String @db.VarChar(191)
+  id              Int           @id
+  name            String        @db.VarChar(191)
   starRating      Int
-  streetAddress   String @db.VarChar(191)
-  locality        String @db.VarChar(191)
-  postalCode      String @db.VarChar(191)
-  region          String @db.VarChar(191)
-  countryName     String @db.VarChar(191)
-  countryCode     String @db.VarChar(191)
+  streetAddress   String        @db.VarChar(191)
+  locality        String        @db.VarChar(191)
+  postalCode      String        @db.VarChar(191)
+  region          String        @db.VarChar(191)
+  countryName     String        @db.VarChar(191)
+  countryCode     String        @db.VarChar(191)
   hotelLocationId Int
   hotelLocation   HotelLocation @relation(fields: [hotelLocationId], references: [destinationId])
   rooms           HotelRoom[]
+<<<<<<< HEAD
   destinationId Int 
   destination   Destination @relation(fields: [destinationId], references: [id])
   createdAt DateTime? @default(now())
   updatedAt DateTime? @default(now())
+=======
+  destinationId   Int
+  destination     Destination   @relation(fields: [destinationId], references: [id])
+>>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
 }
 
 model HotelRoom {
-  id            Int @id @default(autoincrement())
-  hotelId       Int 
-  hotel         Hotel @relation(fields: [hotelId], references: [id])
-  roomCapacity  Int 
+  id            Int     @id @default(autoincrement())
+  hotelId       Int
+  hotel         Hotel   @relation(fields: [hotelId], references: [id])
+  roomCapacity  Int
   internet      Boolean
-  refrigeration Boolean 
+  refrigeration Boolean
   televsision   Boolean
   Bath          Boolean
   Spa           Boolean
@@ -149,13 +231,17 @@ model HotelRoom {
 }
 
 model HotelLocation {
-  destinationId Int @id 
-  geolocationId Int 
-  name          String @db.VarChar(191)
-  type          String @db.VarChar(191)
+  destinationId Int     @id
+  geolocationId Int
+  name          String  @db.VarChar(191)
+  type          String  @db.VarChar(191)
   latitude      Float
-  longitude     Float 
+  longitude     Float
   hotel         Hotel[]
+<<<<<<< HEAD
   createdAt DateTime? @default(now())
   updatedAt DateTime? @default(now())
 }
+=======
+}
+>>>>>>> df684a37346a79d28f44deebce8c0270bac9507d

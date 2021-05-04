@@ -16,7 +16,13 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
     CheckInputIsValid(input);
 
     const { startLocation, endLocation, startDate, endDate } = input;
-    const radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.4;
+    let radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.75;
+
+    // TODO: If radius is more than 5000m, split the journey up instead of using a centre
+    radius = radius > 25000 ? 25000 : radius;
+    // not sure if 2000m should be the min radius heh
+    radius = radius < 15000 ? 15000 : radius;
+
     const centre = getMidpointBetweenTwoCoordinates(startLocation, endLocation);
     const placesInput: NearbyPlacesInput = { ...centre, radius, queryByPrice: false };
     let allPlaces: Place[] = [];
@@ -54,6 +60,7 @@ const CheckInputIsValid = (input: TripGenerationInputs) => {
 }
 
 const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
+  const addedPlaces = new Set<string>();
   const minDuration = 30;
   let maxDuration = end - start > 180 ? 180 : end - start;
   const activities: Activity[] = [];
@@ -65,11 +72,13 @@ const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
   let foodIndex = 0;
   const numFoodPlaces = places.food.length;
   const numNonFoodPlaces = places.nonFood.length;
-  while (time <= end - maxDuration) {
+  while (time <= end - maxDuration && (foodIndex < numFoodPlaces || nonFoodIndex < numNonFoodPlaces)) {
     let currentPlaceDidChange = false;
     if (currentPlace) prevPlace = { ...currentPlace };
-    const duration = Math.ceil(Math.random() * (maxDuration - minDuration) + minDuration);
-    time += duration;
+
+    const randomDuration = Math.ceil(Math.random() * (maxDuration - minDuration) + minDuration);
+    const duration = roundUpToNearest10(randomDuration);
+
     if (duration < 0) break;
 
     const nonFoodPlacesLeft = nonFoodIndex < numNonFoodPlaces;
@@ -88,21 +97,27 @@ const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
     }
 
     if (currentPlaceDidChange && currentPlace) {
-      activities.push({
-        types: currentPlace.types,
-        name: currentPlace.name,
-        rating: currentPlace.rating,
-        price: currentPlace.price_level,
-        location: currentPlace.vicinity,
-        duration,
-        time,
-        place_id: currentPlace.place_id
-      });
+      // only add the place if we haven't visited it already
+      if (!addedPlaces.has(currentPlace.name)) {
+        activities.push({
+          types: currentPlace.types,
+          name: currentPlace.name,
+          rating: currentPlace.rating,
+          price: currentPlace.price_level,
+          location: currentPlace.vicinity,
+          duration,
+          time,
+          place_id: currentPlace.place_id
+        });
+        addedPlaces.add(currentPlace.name)
 
-      if (currentPlace && prevPlace) {
-        const travelDist = distanceBetweenTwoCoordinates(currentPlace.geometry.location, prevPlace.geometry.location);
-        // assume the time taken to travel just the total distance travelled at 50km/hr
-        time += Math.ceil(travelDist / 50);
+        time += duration;
+
+        if (currentPlace && prevPlace) {
+          const travelDist = distanceBetweenTwoCoordinates(currentPlace.geometry.location, prevPlace.geometry.location);
+          // assume the time taken to travel just the total distance travelled at 50km/hr
+          time += roundUpToNearest10(Math.ceil(travelDist / 50));
+        }
       }
     }
 
@@ -111,3 +126,5 @@ const generateTrip = (places: RefinedPlaces, start: number, end: number) => {
 
   return activities;
 }
+
+const roundUpToNearest10 = (num: number) => Math.ceil(num * 0.1) * 10;

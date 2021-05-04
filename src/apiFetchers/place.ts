@@ -38,14 +38,18 @@ export const getRefinedPlaces = (places: Place[]) => {
         const types = place.types;
         // if there are no types OR if a business status is defined and it isn't operational, return
         if (types == null || types.length === 0 || (place.business_status && place.business_status !== "OPERATIONAL")) return;
-        for (const type of types) {
-            const weWantToGoToThisPlace = PLACES_TO_GO.find(t => t === type);
-            if (weWantToGoToThisPlace) {
-                // if its a place we want to go to, make sure if the place a food place by rechecking types
-                // TODO: simplify the check to make it not O(n*m)
-                if (types.find(t => FOOD_PLACES_TO_GO.find(food => food === t))) organisedPlaces.food.push(place);
-                else organisedPlaces.nonFood.push(place);
-                break;
+        const notAPlaceToAvoid = !types.find(t => PLACES_TO_NOT_GO.includes(t));
+        if (notAPlaceToAvoid) {
+            for (const type of types) {
+                const weWantToGoToThisPlace = PLACES_TO_GO.includes(type);
+                if (weWantToGoToThisPlace) {
+                    // if its a place we want to go to, make sure if the place a food place by rechecking types
+                    // TODO: simplify the check to make it not O(n*m)
+                    if (types.find(t => FOOD_PLACES_TO_GO.includes(t))) organisedPlaces.food.push(place);
+                    else organisedPlaces.nonFood.push(place);
+                    break;
+
+                }
             }
         }
     });
@@ -94,7 +98,10 @@ export type BusinessStatus = "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERM
 export const FOOD_PLACES_TO_GO: PlaceType[] = ['restaurant', 'bakery', 'cafe', 'meal_takeaway'];
 
 export const PLACES_TO_GO: PlaceType[] = ['amusement_park', 'aquarium', 'art_gallery', 'movie_theater', 'restaurant', 'museum', 'park', 'tourist_attraction', 'zoo',
-    'bakery', 'spa', 'cafe', 'library', 'night_club', 'campground', 'bowling_alley', 'city_hall', 'landmark', 'natural_feature', 'lodging'];
+    'bakery', 'spa', 'cafe', 'library', 'night_club', 'campground', 'bowling_alley', 'city_hall', 'landmark', 'natural_feature', 'lodging', 'point_of_interest', 'establishment'];
+
+export const PLACES_TO_NOT_GO: PlaceType[] = ['store', 'car_dealer', 'car_rental', 'convenience_store', 'gas_station', 'finance', 'home_goods_store', 'furniture_store',
+    'storage'];
 
 export interface Photo {
     height: number;

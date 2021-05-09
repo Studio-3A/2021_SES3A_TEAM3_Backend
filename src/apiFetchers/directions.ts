@@ -1,9 +1,8 @@
 import {
     badRequest, handleError, isErrorResponse, StatusCode, StatusCodeError, getContent,
-    Coordinate, coordinatesAreValid
+    Coordinate, coordinatesAreValid, isCoordinate, TravelMode, TransitMode, DirectionsResponse
 } from "travelogue-utility";
 import { GOOGLE_DIRECTIONS_KEY } from "../config/constants";
-import { GoogleResponseStatus } from "./utility";
 
 const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?key=${GOOGLE_DIRECTIONS_KEY}`;
 
@@ -14,15 +13,27 @@ export const getDirections = async (req: DirectionsRequest) => {
         DirectionsRequestIsValid(req);
         const params: string[] = [];
         let tempParams: string[] = [];
+        if (isCoordinate(req.origin)) {
+            params.push(`origin=${encodeURIComponent(req.origin.lat + "," + req.origin.lng)}`);
+        } else {
+            params.push(`origin=place_id:${req.origin}`);
+        }
+        if (isCoordinate(req.destination)) {
+            params.push(`destination=${encodeURIComponent(req.destination.lat + "," + req.destination.lng)}`);
+        } else {
+            params.push(`destination=place_id:${req.origin}`);
+        }
 
-        params.push(`origin=${encodeURIComponent(req.origin.lat + "," + req.origin.lng)}`
-            + `&destination=${encodeURIComponent(req.destination.lat + "," + req.destination.lng)}`);
         params.push(`units=${req.unit || DEFAULT_UNIT}`);
 
         if (req.arrivalTime != null) {
             params.push(`arrival_time=${req.arrivalTime}`);
         } else if (req.departureTime != null) {
             params.push(`departure_time=${req.departureTime}`);
+        }
+
+        if (req.waypoints && req.waypoints.length > 0) {
+            params.push(`waypoints=place_id:${encodeURIComponent(req.waypoints.join("|place_id:"))}`)
         }
 
         if (req.routingPreferences != null) {
@@ -59,18 +70,29 @@ const DirectionsRequestIsValid = (req: DirectionsRequest) => {
     if (req.arrivalTime != null && req.departureTime != null) {
         throw new StatusCodeError(StatusCode.BadRequest, "Arrival time and departure time cannot be used simultaneously");
     }
-    if (!coordinatesAreValid(req.origin) || !coordinatesAreValid(req.destination)) {
+    if (isCoordinate(req.origin) && (!coordinatesAreValid(req.origin)) ||
+        isCoordinate(req.destination) && !coordinatesAreValid(req.destination)) {
         throw new StatusCodeError(StatusCode.BadRequest, "Origin and destination coordinates must have valid latitude and longitude values");
+    }
+    if (req.waypoints && req.waypoints.length > 0) {
+        if (req.waypoints.length > 23) {
+            // google throws an error with > 25 waypoints, so might as well catch it here
+            // best to split up the response instead
+            throw new StatusCodeError(StatusCode.BadRequest, "Cannot have more than 25 waypoints (including origin and destination");
+        } else if (req.travelModes.includes("transit")) {
+            // google doesn't allow waypoints wen using transit
+            throw new StatusCodeError(StatusCode.BadRequest, "Cannot use waypoints with transit travel mode");
+        }
     }
 }
 
 export interface DirectionsRequest {
-    origin: Coordinate;
-    destination: Coordinate;
+    origin: Coordinate | string;
+    destination: Coordinate | string;
     travelModes: TravelMode[];
     transitModes?: TransitMode[];
     routingPreferences?: TransitRoutingPreferences;
-    // waypoints?: Waypoint;
+    waypoints?: string[];
     avoid?: FeatureAvoid;
     arrivalTime?: number;
     departureTime?: number;
@@ -79,9 +101,6 @@ export interface DirectionsRequest {
 
 type DistanceUnit = "metric" | "imperial"
 
-type TravelMode = "driving" | "walking" | "bicycling" | "transit";
-
-type TransitMode = "bus" | "subway" | "train" | "tram" | "rail"; // using rail combines tram, train and subway
 
 export interface TransitRoutingPreferences {
     lessWalking?: boolean;
@@ -99,122 +118,4 @@ export interface FeatureAvoid {
     highways?: boolean;
     ferries?: boolean;
     indoor?: boolean;
-}
-
-export type DirectionsResponseStatus = "NOT_FOUND" | "MAX_WAYPOINTS_EXCEEDED" | "MAX_ROUTE_LENGTH_EXCEEDED" | "OVER_DAILY_LIMIT" | GoogleResponseStatus;
-
-export interface DirectionsResponse {
-    status: DirectionsResponseStatus;
-    error_message?: object; // idk what the type of this is lol
-    geocoded_waypoints?: GeocodedWaypoint[];
-    routes?: Route[];
-    available_travel_modes?: (TransitMode | TravelMode)[];
-    fare?: Fare;
-}
-
-export interface GeocodedWaypoint {
-    geocoder_status?: string;
-    place_id?: string;
-    types?: string[];
-}
-
-export interface RouteComponents {
-    start_location?: Coordinate;
-    end_location?: Coordinate;
-    start_address?: string;
-    end_address?: string;
-    duration?: ValueAndText;
-}
-
-export interface Route extends RouteComponents {
-    summary?: string;
-    legs?: RouteLeg[];
-    warnings?: any[];
-    copyrights?: string;
-    overview_polyline?: Polyline;
-    waypoint_order?: number[];
-    // bounds: ??; idk what the heck this is meant to be
-}
-
-export interface RouteLeg extends RouteComponents {
-    steps?: RouteStep[];
-    distance?: ValueAndText;
-    duration?: ValueAndText;
-    duration_in_traffic?: ValueAndText;
-    arrival_time?: Time;
-    departure_time?: Time;
-}
-
-export interface ValueAndText {
-    value: number;
-    text: string;
-}
-
-export interface Fare extends ValueAndText {
-    currency: string;
-}
-
-export interface Time {
-    value: Date;
-    text: string;
-    time_zome: string;
-}
-
-export interface RouteStep extends BasicStep {
-    steps?: BasicStep[];
-}
-
-export interface BasicStep extends RouteComponents {
-    travel_mode?: TravelMode | TransitMode;
-    polyline?: Polyline;
-    distance?: ValueAndText;
-    html_instructions?: string;
-    transit_details?: TransitDetail;
-}
-
-export interface TransitDetail {
-    arrival_stop?: TransitLocation;
-    departure_stop?: TransitLocation;
-    arrival_time: Time;
-    departure_time: Time;
-    headway?: number;
-    num_strops?: number;
-    trip_short_name?: string;
-    line?: TransitLine;
-}
-
-export interface TransitLocation {
-    name?: string;
-    location?: Coordinate;
-}
-
-export interface TransitLine {
-    name?: string;
-    short_name?: string;
-    color?: string;
-    agencies?: TransitAgency[];
-    url?: string;
-    icon?: string;
-    text_color?: string;
-    vehicle?: TransitVehicle;
-}
-
-type VehicleType = "RAIL" | "METRO_RAIL" | "SUBWAY" | "TRAM" | "MONORAIL" | "HEAVYRAIL" | "COMMUTER_TRAIN" | "HIGH_SPEED_TRAIN" |
-    "LONG_DISTANCE_TRAIN" | "BUS" | "INTERCITY_BUS" | "TROLLEYBUS" | "SHARE_TAXI" | "FERRY" | "CABLE_CAR" | "GONDOLA_LIFT" | "FUNICULAR" | "OTHER";
-
-export interface TransitVehicle {
-    name?: string;
-    icon?: string;
-    type?: VehicleType;
-    local_icon?: string;
-}
-
-export interface TransitAgency {
-    name?: string;
-    phone?: string;
-    url?: string;
-}
-
-export interface Polyline {
-    points: string;
 }

@@ -10,6 +10,10 @@ import { parseAuthSession } from "./authentication";
 // Application Logic
 import { authRouter, dataRouter, tripRouter, userRouter } from "./routes";
 
+//Redis Server
+const redis = require('redis')
+export const redis_client = redis.createClient(6379)
+
 
 async function startServer() {
     const app = express();

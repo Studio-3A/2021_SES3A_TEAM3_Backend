@@ -7,6 +7,7 @@ import {
   Activity, TripGenerationInputs, Trip, Coordinate, DirectionsResponse
 } from 'travelogue-utility';
 import { getDirections } from '../../apiFetchers/directions';
+import { redis_client } from '../..';
 
 export const tripRouter = express.Router({
   strict: true,
@@ -17,74 +18,91 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
     const input = req.body;
     CheckInputIsValid(input);
 
-    const { startLocation, endLocation, startDate, endDate } = input;
-    let radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.75;
+    // Initial example key 
+    // TODO: Negatives will cause problems, will need to write conditional
+    const key = req.body.startLocation.lat * req.body.startLocation.lng + 
+                req.body.endLocation.lat * req.body.endLocation.lng
 
-    // TODO: If radius is more than 25000m, split the journey up instead of using a centre
-    radius = radius > 25000 ? 25000 : radius;
-    // not sure if 15000m should be the min radius heh
-    radius = radius < 15000 ? 15000 : radius;
-
-    const centre = getMidpointBetweenTwoCoordinates(startLocation, endLocation);
-    const placesInput: NearbyPlacesInput = { ...centre, radius, queryByPrice: false };
-    let allPlaces: Place[] = [];
-
-    const getPlaces = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
-      if (iteration > 4) return;
-      let places = await getPlacesByLocation({ ...placesInput, queryByPrice, pagetoken });
-      if (!isErrorResponse(places)) {
-        allPlaces = allPlaces.concat(places.results);
-        if (places.next_page_token) {
-          await getPlaces(queryByPrice, places.next_page_token, iteration + 1);
-        }
-      }
-    }
-
-    await getPlaces(true);
-    await getPlaces(false);
-
-    const actual = getRefinedPlaces(allPlaces);
-    const [activities, waypoints] = generateTrip(actual, startDate, endDate);
-    let directions: DirectionsResponse[] | undefined = [];
-
-    // if there are more than 25 waypoints (including start and dest)
-    // send separate requests
-
-    // start the first request from our actual start
-    let origin: Coordinate | string = startLocation;
-
-    // if there are more than 23 waypoints (excluding start and dest)
-    // we'll have to deal with them 23 at a time - or just use their length if we're not over the max
-    let spliceLen = waypoints.length > 23 ? 23 : waypoints.length;
-
-    // end the first request from the last possible waypoint if we're over the max
-    // or just use the actual end location
-    let destination: Coordinate | string = waypoints.length > 23 ? waypoints[spliceLen] : endLocation;
-
-    while (waypoints.length > 0) {
-      const response = await getDirections({
-        origin, destination, travelModes: ["driving", "walking"],
-        waypoints: waypoints.splice(0, spliceLen)
-      });
-      // if anything happens to go wrong, just don't do anything I guess
-      if (isErrorResponse(response)) { break; }
-
-      directions.push(response)
-      // make the new start location the old end location
-      origin = destination;
-      if (waypoints.length < 23) {
-        // if there are less than 23 waypoints, use whatever we have left
-        // and make sure the end location is actual end location
-        spliceLen = waypoints.length;
-        destination = endLocation;
+    // At the moment just a direct check
+    // TODO: Allow for "similar trips" to be retrievable via cache
+    redis_client.get(key, async (err: object, result: object) => {
+      if (err == null && result != null) {
+        return res.send(result);
       } else {
-        destination = waypoints[spliceLen];
+        const { startLocation, endLocation, startDate, endDate } = input;
+        let radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.75;
+    
+        // TODO: If radius is more than 25000m, split the journey up instead of using a centre
+        radius = radius > 25000 ? 25000 : radius;
+        // not sure if 15000m should be the min radius heh
+        radius = radius < 15000 ? 15000 : radius;
+    
+        const centre = getMidpointBetweenTwoCoordinates(startLocation, endLocation);
+        const placesInput: NearbyPlacesInput = { ...centre, radius, queryByPrice: false };
+        let allPlaces: Place[] = [];
+    
+        const getPlaces = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
+          if (iteration > 4) return;
+          let places = await getPlacesByLocation({ ...placesInput, queryByPrice, pagetoken });
+          if (!isErrorResponse(places)) {
+            allPlaces = allPlaces.concat(places.results);
+            if (places.next_page_token) {
+              await getPlaces(queryByPrice, places.next_page_token, iteration + 1);
+            }
+          }
+        }
+    
+        await getPlaces(true);
+        await getPlaces(false);
+    
+        const actual = getRefinedPlaces(allPlaces);
+        const [activities, waypoints] = generateTrip(actual, startDate, endDate);
+        let directions: DirectionsResponse[] | undefined = [];
+    
+        // if there are more than 25 waypoints (including start and dest)
+        // send separate requests
+    
+        // start the first request from our actual start
+        let origin: Coordinate | string = startLocation;
+    
+        // if there are more than 23 waypoints (excluding start and dest)
+        // we'll have to deal with them 23 at a time - or just use their length if we're not over the max
+        let spliceLen = waypoints.length > 23 ? 23 : waypoints.length;
+    
+        // end the first request from the last possible waypoint if we're over the max
+        // or just use the actual end location
+        let destination: Coordinate | string = waypoints.length > 23 ? waypoints[spliceLen] : endLocation;
+    
+        while (waypoints.length > 0) {
+          const response = await getDirections({
+            origin, destination, travelModes: ["driving", "walking"],
+            waypoints: waypoints.splice(0, spliceLen)
+          });
+          // if anything happens to go wrong, just don't do anything I guess
+          if (isErrorResponse(response)) { break; }
+    
+          directions.push(response)
+          // make the new start location the old end location
+          origin = destination;
+          if (waypoints.length < 23) {
+            // if there are less than 23 waypoints, use whatever we have left
+            // and make sure the end location is actual end location
+            spliceLen = waypoints.length;
+            destination = endLocation;
+          } else {
+            destination = waypoints[spliceLen];
+          }
+        }
+
+        const trip: Trip = { trip: activities, tripId: v4(), directions };
+
+        // Save trip into redis cache
+        redis_client.set(key, JSON.stringify(trip))
+
+        return res.send(trip);
+
       }
-    }
-
-    const trip: Trip = { trip: activities, tripId: v4(), directions };
-
-    res.send(trip);
+    })
   } catch (e) {
     res.send(handleError(e));
   }

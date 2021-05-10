@@ -1,0 +1,11 @@
+FROM node:alpine
+
+WORKDIR /app
+
+COPY ./tsconfig.json .
+COPY ./package.json .
+COPY ./package-lock.json .
+
+RUN [ "npm", "install" ]
+
+CMD [ "npm", "run", "dev" ]

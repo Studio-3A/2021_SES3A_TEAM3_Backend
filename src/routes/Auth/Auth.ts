@@ -1,6 +1,6 @@
 import express from "express";
 import { Request, Response } from "../../common/expresstypes";
-import { StatusCode } from "travelogue-utility"
+import { StatusCode } from "travelogue-utility";
 
 export const authRouter = express.Router({
     strict: true

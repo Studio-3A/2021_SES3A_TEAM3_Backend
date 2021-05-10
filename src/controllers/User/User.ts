@@ -25,19 +25,6 @@ export class UserController extends CrudController {
     public async read(req: Request<Params>, res: Response) {
         // TODO: Make sure that router catches "GET /users/:objectId" and sets the req.params.objectId correctly. 
         // TODO: Use User.find({}) to allow user specified filters
-
-        // const uid = "test";
-        // const now = new Date();
-        // const not_now = new Date(); not_now.setFullYear(now.getFullYear() - 2);
-        // const tripsLegs = [{ beginDate: now }, { beginDate: not_now }];
-        // await prisma.tripLeg.deleteMany({ where: { Trip: { User: { id: uid } }} });
-        // await prisma.trip.deleteMany({ where: { User: { id: uid } } });
-        // await prisma.user.deleteMany({ where: { id: uid } });
-        // const update = await prisma.user.create({ data: { id: uid, Trips: { create: [ { TripLegs: { create: tripsLegs }} ]}}, });
-        
-        // const users = await prisma.user.findMany({ include: { Trips: { include : { TripLegs: true } } } });
-        // return res.json(users);
-        
         try {
 
             const id = req.params.objectId;

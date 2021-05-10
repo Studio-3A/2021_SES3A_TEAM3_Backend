@@ -8,7 +8,6 @@ datasource db {
 }
 
 model User {
-<<<<<<< HEAD
   id        String   @id @db.VarChar(191)
   firstName String   @db.VarChar(191)
   lastName  String   @db.VarChar(191)
@@ -16,14 +15,8 @@ model User {
   updatedAt DateTime? @default(now())
   deletedAt DateTime?
   bookings  Booking[]
+  searchTrip SearchTrip[]
   Trips     Trip[]
-=======
-  id String @id @db.VarChar(191)
-
-  lastSearch SearchTrip?
-  bookings   Booking[]
-  Trips      Trip[]
->>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
 }
 
 model BookingEntry {
@@ -34,17 +27,11 @@ model BookingEntry {
   bookingType   BookingType?
   description   String       @db.VarChar(255)
   tripId        Int
-<<<<<<< HEAD
   Trip          Trip @relation(fields: [tripId], references: [id]) 
   destinationId Int 
   points        Int 
   createdAt DateTime? @default(now())
   updatedAt DateTime? @default(now())
-=======
-  Trip          Trip         @relation(fields: [tripId], references: [id])
-  destinationId Int
-  points        Int
->>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
 }
 
 model BookingType {
@@ -70,13 +57,12 @@ model Booking {
 model SearchTrip {
   id     Int    @id @default(autoincrement())
   userId String @db.VarChar(191)
-
   destintations SearchTripDestintation[]
   user          User                     @relation(fields: [userId], references: [id])
 }
 
 model SearchTripDestintation {
-  searchTripId  Int    @default(autoincrement())
+  searchTripId  Int 
   googlePlaceID String
   name          String
   rating        Float
@@ -84,14 +70,14 @@ model SearchTripDestintation {
   duration      Int
   time          BigInt
 
-  trip SearchTrip                  @relation(fields: [searchTripId], references: [id])
+  trip SearchTrip @relation(fields: [searchTripId], references: [id])
   tags SearchTripDestintationTag[]
   @@id([searchTripId, googlePlaceID])
   @@unique([searchTripId, googlePlaceID])
 }
 
 model SearchTripDestintationTag {
-  searchTripId     Int    @default(autoincrement())
+  searchTripId     Int    
   googlePlaceID    String
   destinationTagId Int
 
@@ -102,8 +88,8 @@ model SearchTripDestintationTag {
 }
 
 model DestinationTag {
-  id        Int    @id @default(autoincrement())
-  googleTag String
+  id           Int    @id @default(autoincrement())
+  googleTag    String
 
   destinations SearchTripDestintationTag[]
 }
@@ -114,8 +100,8 @@ model Trip {
   tripLegs     TripLeg[]
   user         User           @relation(fields: [userId], references: [id])
   bookingEntry BookingEntry[]
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
+  createdAt    DateTime? @default(now())
+  updatedAt    DateTime? @default(now())
 }
 
 model TripLeg {
@@ -126,8 +112,8 @@ model TripLeg {
   destination   Destination @relation(fields: [destinationId], references: [id])
   beginDate     DateTime?
   endDate       DateTime?
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @default(now())
 }
 
 model Destination {
@@ -136,19 +122,12 @@ model Destination {
   tripLegs      TripLeg[]
   activities    Activity[]
   hotels        Hotel[]
-<<<<<<< HEAD
   name          String @db.VarChar(191)
   state         String @db.VarChar(191)
   region        String @db.VarChar(191)
   country       String @db.VarChar(191)
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
-=======
-  name          String     @db.VarChar(191)
-  state         String     @db.VarChar(191)
-  region        String     @db.VarChar(191)
-  country       String     @db.VarChar(191)
->>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @default(now())
 }
 
 model Activity {
@@ -160,37 +139,30 @@ model Activity {
   venues        Venue[]
   startTime     DateTime
   endTime       DateTime
-<<<<<<< HEAD
   title         String @db.VarChar(191)
   description   String @db.VarChar(255)
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @default(now())
 }
 
 model Venue {
-  id            Int @id @default(autoincrement())
-  activity      Activity @relation(fields: [activityId], references: [id])
-  activityId    Int 
-  name          String @db.VarChar(191)
-  website       String @db.VarChar(191)
-  phone         String @db.VarChar(191)
-  email         String @db.VarChar(191)
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
-=======
-  title         String      @db.VarChar(191)
-  description   String      @db.VarChar(255)
-}
-
-model Venue {
-  id         Int      @id @default(autoincrement())
-  activity   Activity @relation(fields: [activityId], references: [id])
-  activityId Int
-  name       String   @db.VarChar(191)
-  website    String   @db.VarChar(191)
-  phone      String   @db.VarChar(191)
-  email      String   @db.VarChar(191)
->>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
+  id               Int @id @default(autoincrement())
+  googlePlaceID    String
+  activity         Activity @relation(fields: [activityId], references: [id])
+  activityId       Int 
+  name             String @db.VarChar(191)
+  website          String @db.VarChar(191)
+  phone            String @db.VarChar(191)
+  email            String @db.VarChar(191)
+  latitude         Float 
+  longitude        Float
+  formattedAddress String @db.VarChar(191)
+  rating           Float 
+  totalUserRatings Int 
+  priceLevel       Int 
+  photos           String @db.Text
+  createdAt        DateTime? @default(now())
+  updatedAt        DateTime? @default(now())
 }
 
 model Hotel {
@@ -206,15 +178,10 @@ model Hotel {
   hotelLocationId Int
   hotelLocation   HotelLocation @relation(fields: [hotelLocationId], references: [destinationId])
   rooms           HotelRoom[]
-<<<<<<< HEAD
-  destinationId Int 
-  destination   Destination @relation(fields: [destinationId], references: [id])
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
-=======
-  destinationId   Int
-  destination     Destination   @relation(fields: [destinationId], references: [id])
->>>>>>> df684a37346a79d28f44deebce8c0270bac9507d
+  destinationId   Int 
+  destination     Destination @relation(fields: [destinationId], references: [id])
+  createdAt       DateTime? @default(now())
+  updatedAt       DateTime? @default(now())
 }
 
 model HotelRoom {
@@ -238,10 +205,6 @@ model HotelLocation {
   latitude      Float
   longitude     Float
   hotel         Hotel[]
-<<<<<<< HEAD
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @default(now())
 }
-=======
-}
->>>>>>> df684a37346a79d28f44deebce8c0270bac9507d

@@ -7,7 +7,10 @@ import {
   Activity, TripGenerationInputs, Trip, Coordinate, DirectionsResponse
 } from 'travelogue-utility';
 import { getDirections } from '../../apiFetchers/directions';
-import { redis_client } from '../..';
+
+//Redis Server
+import redis from 'redis';
+export const redis_client = redis.createClient(6379)
 
 export const tripRouter = express.Router({
   strict: true,
@@ -17,30 +20,28 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
   try {
     const input = req.body;
     CheckInputIsValid(input);
+    const { startLocation, endLocation, startDate, endDate } = input;
 
-    // Initial example key 
-    // TODO: Negatives will cause problems, will need to write conditional
-    const key = req.body.startLocation.lat * req.body.startLocation.lng + 
-                req.body.endLocation.lat * req.body.endLocation.lng
+    // Initial example key
+    const key = `(${startLocation.lat},${startLocation.lng}), (${endLocation.lat},${endLocation.lng})`;
 
     // At the moment just a direct check
     // TODO: Allow for "similar trips" to be retrievable via cache
-    redis_client.get(key, async (err: object, result: object) => {
+    redis_client.get(key, async (err, result) => {
       if (err == null && result != null) {
         return res.send(result);
       } else {
-        const { startLocation, endLocation, startDate, endDate } = input;
         let radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.75;
-    
+
         // TODO: If radius is more than 25000m, split the journey up instead of using a centre
         radius = radius > 25000 ? 25000 : radius;
         // not sure if 15000m should be the min radius heh
         radius = radius < 15000 ? 15000 : radius;
-    
+
         const centre = getMidpointBetweenTwoCoordinates(startLocation, endLocation);
         const placesInput: NearbyPlacesInput = { ...centre, radius, queryByPrice: false };
         let allPlaces: Place[] = [];
-    
+
         const getPlaces = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
           if (iteration > 4) return;
           let places = await getPlacesByLocation({ ...placesInput, queryByPrice, pagetoken });
@@ -51,28 +52,25 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
             }
           }
         }
-    
+
         await getPlaces(true);
         await getPlaces(false);
-    
+
         const actual = getRefinedPlaces(allPlaces);
         const [activities, waypoints] = generateTrip(actual, startDate, endDate);
-        let directions: DirectionsResponse[] | undefined = [];
-    
-        // if there are more than 25 waypoints (including start and dest)
-        // send separate requests
-    
+        let directions: DirectionsResponse[] = [];
+
         // start the first request from our actual start
         let origin: Coordinate | string = startLocation;
-    
+
         // if there are more than 23 waypoints (excluding start and dest)
         // we'll have to deal with them 23 at a time - or just use their length if we're not over the max
         let spliceLen = waypoints.length > 23 ? 23 : waypoints.length;
-    
+
         // end the first request from the last possible waypoint if we're over the max
         // or just use the actual end location
         let destination: Coordinate | string = waypoints.length > 23 ? waypoints[spliceLen] : endLocation;
-    
+
         while (waypoints.length > 0) {
           const response = await getDirections({
             origin, destination, travelModes: ["driving", "walking"],
@@ -80,7 +78,7 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
           });
           // if anything happens to go wrong, just don't do anything I guess
           if (isErrorResponse(response)) { break; }
-    
+
           directions.push(response)
           // make the new start location the old end location
           origin = destination;
@@ -100,7 +98,6 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
         redis_client.set(key, JSON.stringify(trip))
 
         return res.send(trip);
-
       }
     })
   } catch (e) {

@@ -3,16 +3,12 @@ import { PORT, HOST, PROTOCOL } from "./config/constants";
 
 // Middleware
 import cors from "cors";
-import cookieParser, { CookieParseOptions } from "cookie-parser";
+import cookieParser from "cookie-parser";
 import apolloServer from "./Apollo";
 import { parseAuthSession } from "./authentication";
 
 // Application Logic
 import { authRouter, dataRouter, tripRouter, userRouter } from "./routes";
-
-//Redis Server
-const redis = require('redis')
-export const redis_client = redis.createClient(6379)
 
 
 async function startServer() {

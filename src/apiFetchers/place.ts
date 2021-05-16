@@ -30,23 +30,34 @@ export const getPlacesByLocation = (details: NearbyPlacesInput) => {
 export interface RefinedPlaces {
     food: Place[];
     nonFood: Place[];
+    lodging: Place[];
 }
 
-export const getRefinedPlaces = (places: Place[]) => {
-    const organisedPlaces: RefinedPlaces = { food: [], nonFood: [] };
+export const getRefinedPlaces = (places: Place[]): RefinedPlaces => {
+    const organisedPlaces: RefinedPlaces = { food: [], nonFood: [], lodging: [] };
+    let iterationsSinceLastStay = 0;
     places.forEach(place => {
         const types = place.types;
         // if there are no types OR if a business status is defined and it isn't operational, return
-        if (types == null || types.length === 0 || (place.business_status && place.business_status !== "OPERATIONAL")) return;
-        const notAPlaceToAvoid = !types.find(t => PLACES_TO_NOT_GO.includes(t));
+        if (types == null || types.length === 0 || (place.business_status && place.business_status !== "OPERATIONAL")) {
+            return;
+        }
+        const notAPlaceToAvoid = !types.find(t => PLACES_TO_NOT_GO.has(t));
         if (notAPlaceToAvoid) {
             for (const type of types) {
-                const weWantToGoToThisPlace = PLACES_TO_GO.includes(type);
-                if (weWantToGoToThisPlace) {
+                if (PLACES_TO_GO.has(type)) {
                     // if its a place we want to go to, make sure if the place a food place by rechecking types
                     // TODO: simplify the check to make it not O(n*m)
-                    if (types.find(t => FOOD_PLACES_TO_GO.includes(t))) organisedPlaces.food.push(place);
-                    else organisedPlaces.nonFood.push(place);
+                    if (isPlaceToStay(types) && iterationsSinceLastStay > 2) {
+                        organisedPlaces.lodging.push(place);
+                        iterationsSinceLastStay = 0;
+                    } else if (types.find(t => FOOD_PLACES_TO_GO.has(t))) {
+                        organisedPlaces.food.push(place);
+                        ++iterationsSinceLastStay;
+                    } else {
+                        organisedPlaces.nonFood.push(place);
+                        ++iterationsSinceLastStay;
+                    }
                     break;
 
                 }
@@ -55,6 +66,13 @@ export const getRefinedPlaces = (places: Place[]) => {
     });
 
     return organisedPlaces;
+}
+
+const isPlaceToStay = (types: PlaceType[]): boolean => {
+    return types.length === 3 &&
+        types.find(t => t === "lodging") != null &&
+        types.find(t => t === "point_of_interest") != null &&
+        types.find(t => t === "establishment") != null;
 }
 
 export interface NearbyPlacesInput extends Coordinate {
@@ -95,13 +113,12 @@ export interface Place {
 
 export type BusinessStatus = "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY";
 
-export const FOOD_PLACES_TO_GO: PlaceType[] = ['restaurant', 'bakery', 'cafe', 'meal_takeaway'];
+export const FOOD_PLACES_TO_GO: Set<PlaceType> = new Set<PlaceType>(['restaurant', 'bakery', 'cafe', 'meal_takeaway']);
 
-export const PLACES_TO_GO: PlaceType[] = ['amusement_park', 'aquarium', 'art_gallery', 'movie_theater', 'restaurant', 'museum', 'park', 'tourist_attraction', 'zoo',
-    'bakery', 'spa', 'cafe', 'library', 'night_club', 'campground', 'bowling_alley', 'city_hall', 'landmark', 'natural_feature', 'lodging', 'point_of_interest', 'establishment'];
+export const PLACES_TO_GO: Set<PlaceType> = new Set<PlaceType>(['amusement_park', 'aquarium', 'art_gallery', 'movie_theater', 'restaurant', 'museum', 'park', 'tourist_attraction', 'zoo',
+    'bakery', 'spa', 'cafe', 'library', 'night_club', 'campground', 'bowling_alley', 'city_hall', 'landmark', 'natural_feature', 'lodging', 'point_of_interest', 'establishment']);
 
-export const PLACES_TO_NOT_GO: PlaceType[] = ['store', 'car_dealer', 'car_rental', 'convenience_store', 'gas_station', 'finance', 'home_goods_store', 'furniture_store',
-    'storage'];
+export const PLACES_TO_NOT_GO: Set<PlaceType> = new Set<PlaceType>(['store', 'car_dealer', 'car_rental', 'convenience_store', 'gas_station', 'finance', 'home_goods_store', 'furniture_store', 'storage']);
 
 export interface Photo {
     height: number;

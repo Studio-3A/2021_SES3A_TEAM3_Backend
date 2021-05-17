@@ -1,5 +1,6 @@
 import express from "express";
-import { PORT, HOST, PROTOCOL } from "./config/constants";
+import supertest from "supertest";
+import { PORT, HOST, PROTOCOL, REDIS } from "./config/constants";
 
 // Middleware
 import cors from "cors";
@@ -11,8 +12,8 @@ import { parseAuthSession } from "./authentication";
 import { authRouter, dataRouter, tripRouter, userRouter } from "./routes";
 
 //Redis Server
-const redis = require('redis')
-export const redis_client = redis.createClient(6379)
+import redis from 'redis';
+export const redis_client = redis.createClient(Number.parseInt(REDIS.PORT), REDIS.HOST, {})
 
 
 async function startServer() {
@@ -45,8 +46,25 @@ async function startServer() {
 }
 
 startServer()
-    .then(({ app: Express, apolloServer: ApolloServer }) => {
+    .then(({ app }) => {
         // Server Started Sucessfully
+        const TestServer = supertest(app);
+        TestServer.post("/trip/new").send({
+            "startLocation": {
+               "lat": -33.8298241,
+               "lng": 151.238232
+           },
+           "endLocation": {
+               "lat": -33.7685877,
+               "lng": 150.8775655
+           },
+           "startDate": 1618642046,
+           "endDate": 1618778846
+        }).then(resp => {
+            console.log(resp.statusCode, resp.body)
+        }).catch(err => {
+            console.error(err)
+        });
     })
     .catch(err => {
         console.error(err);

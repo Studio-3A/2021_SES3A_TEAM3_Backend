@@ -22,4 +22,9 @@ export const DATABASE = {
     PASSWORD: process.env.DATABASE_PASSWORD || "password",
 };
 
+export const REDIS = {
+    HOST: process.env.REDIS_HOST || "redis",
+    PORT: process.env.REDIS_PORT || "6379",
+};
+
 export const DATABASE_CONNECTION_STRING = process.env.DATABASE_CONNECTION_STRING || "OI_USE_A_DB_STRING";

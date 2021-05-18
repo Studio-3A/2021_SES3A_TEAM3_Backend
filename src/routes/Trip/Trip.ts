@@ -54,7 +54,7 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
 });
 
 const constructTrip = async (input: TripGenerationInputs): Promise<Trip> => {
-  const { startLocation, endLocation, startDate, endDate } = input;
+  const { startLocation, endLocation, startDate, endDate, tripName } = input;
 
   let radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.75;
 
@@ -75,6 +75,10 @@ const constructTrip = async (input: TripGenerationInputs): Promise<Trip> => {
       if (places.next_page_token) {
         await getPlaces(queryByPrice, places.next_page_token, iteration + 1);
       }
+    } else if (iteration = 1) {
+      // if we're on the first iteration and it fails, it means something went a bit strange
+      // probably a missing API key
+      throw new StatusCodeError(places.status, places.errorMessage ? places.errorMessage : "");
     }
   }
 
@@ -120,7 +124,7 @@ const constructTrip = async (input: TripGenerationInputs): Promise<Trip> => {
     }
   }
 
-  return { trip: activities, tripId: v4(), directions };
+  return { trip: activities, tripId: v4(), directions, tripName };
 }
 
 const checkInputIsValid = (input: TripGenerationInputs): void => {

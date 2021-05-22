@@ -68,14 +68,14 @@ const constructTrip = async (input: TripGenerationInputs): Promise<Trip> => {
   let allPlaces: Place[] = [];
 
   const getPlaces = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
-    if (iteration > 4) return;
+    if (iteration > 3) return;
     let places = await getPlacesByLocation({ ...placesInput, queryByPrice, pagetoken });
     if (!isErrorResponse(places)) {
       allPlaces = allPlaces.concat(places.results);
       if (places.next_page_token) {
         await getPlaces(queryByPrice, places.next_page_token, iteration + 1);
       }
-    } else if (iteration = 1) {
+    } else if (iteration === 1) {
       // if we're on the first iteration and it fails, it means something went a bit strange
       // probably a missing API key
       throw new StatusCodeError(places.status, places.errorMessage ? places.errorMessage : "");

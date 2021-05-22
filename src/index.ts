@@ -3,7 +3,7 @@ import { PORT, HOST, PROTOCOL } from "./config/constants";
 
 // Middleware
 import cors from "cors";
-import cookieParser, { CookieParseOptions } from "cookie-parser";
+import cookieParser from "cookie-parser";
 import apolloServer from "./Apollo";
 import { parseAuthSession } from "./authentication";
 

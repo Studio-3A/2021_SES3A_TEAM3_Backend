@@ -133,6 +133,8 @@ const checkInputIsValid = (input: TripGenerationInputs): void => {
     throw new StatusCodeError(StatusCode.BadRequest, "Start location and end location must be defined");
   } else if (startDate == null || endDate == null) {
     throw new StatusCodeError(StatusCode.BadRequest, "Start time and end time must be defined");
+  } else if (startDate >= endDate) {
+    throw new StatusCodeError(StatusCode.BadRequest, "Start time cannot be after end time");
   }
 }
 

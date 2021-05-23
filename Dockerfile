@@ -1,8 +1,7 @@
 FROM node:latest
+RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
-COPY package*.json ./
+COPY package.json /usr/src/app
 RUN npm i -g typescript
-RUN npm i -g ts-node
-RUN npm install -g concurrently
 RUN npm install
-COPY . .
+COPY . /usr/src/app

@@ -15,7 +15,10 @@ import momentTz from 'moment-timezone';
 //Redis Server
 import redis from 'redis';
 
-let redis_client: redis.RedisClient | undefined; //redis.createClient(6379)
+redis.createClient(process.env.REDIS_URL)
+console.log("Client Attached to Redis at " + process.env.REDIS_URL)
+
+let redis_client: redis.RedisClient | undefined; 
 
 export const tripRouter = express.Router({
   strict: true,

@@ -35,7 +35,7 @@ export interface RefinedPlaces {
 
 export const getRefinedPlaces = (places: Place[]): RefinedPlaces => {
     const organisedPlaces: RefinedPlaces = { food: [], nonFood: [], lodging: [] };
-    let iterationsSinceLastStay = 0;
+    const usedPlaceIds = new Set<string>();
     places.forEach(place => {
         const types = place.types;
         // if there are no types OR if a business status is defined and it isn't operational, return
@@ -43,20 +43,20 @@ export const getRefinedPlaces = (places: Place[]): RefinedPlaces => {
             return;
         }
         const notAPlaceToAvoid = !types.find(t => PLACES_TO_NOT_GO.has(t));
-        if (notAPlaceToAvoid) {
+        if (notAPlaceToAvoid && !usedPlaceIds.has(place.place_id)) {
             for (const type of types) {
                 if (PLACES_TO_GO.has(type)) {
                     // if its a place we want to go to, make sure if the place a food place by rechecking types
                     // TODO: simplify the check to make it not O(n*m)
-                    if (isPlaceToStay(types) && iterationsSinceLastStay > 2) {
+                    if (isPlaceToStay(types)) {
                         organisedPlaces.lodging.push(place);
-                        iterationsSinceLastStay = 0;
+                        usedPlaceIds.add(place.place_id);
                     } else if (types.find(t => FOOD_PLACES_TO_GO.has(t))) {
                         organisedPlaces.food.push(place);
-                        ++iterationsSinceLastStay;
+                        usedPlaceIds.add(place.place_id);
                     } else {
                         organisedPlaces.nonFood.push(place);
-                        ++iterationsSinceLastStay;
+                        usedPlaceIds.add(place.place_id);
                     }
                     break;
 
@@ -104,6 +104,10 @@ export interface Place {
     },
     photos: Photo[];
     place_id: string;
+    plus_code?: {
+        compound_code?: string;
+        global_code?: string;
+    },
     reference: string;
     types: PlaceType[];
     vicinity: string;
@@ -118,7 +122,9 @@ export const FOOD_PLACES_TO_GO: Set<PlaceType> = new Set<PlaceType>(['restaurant
 export const PLACES_TO_GO: Set<PlaceType> = new Set<PlaceType>(['amusement_park', 'aquarium', 'art_gallery', 'movie_theater', 'restaurant', 'museum', 'park', 'tourist_attraction', 'zoo',
     'bakery', 'spa', 'cafe', 'library', 'night_club', 'campground', 'bowling_alley', 'city_hall', 'landmark', 'natural_feature', 'lodging', 'point_of_interest', 'establishment']);
 
-export const PLACES_TO_NOT_GO: Set<PlaceType> = new Set<PlaceType>(['store', 'car_dealer', 'car_rental', 'convenience_store', 'gas_station', 'finance', 'home_goods_store', 'furniture_store', 'storage']);
+export const PLACES_TO_NOT_GO: Set<PlaceType> = new Set<PlaceType>(['school', 'primary_school', 'secondary_school', 'hardware_store', 'post_box', 'post_office',
+    'veterinary_care', 'supermarket', 'car_repair', 'hospital', 'funeral_home', 'real_estate_agency', 'train_station', 'transit_station', 'taxi_stand',
+    'travel_agency', 'store', 'car_dealer', 'car_rental', 'convenience_store', 'gas_station', 'finance', 'home_goods_store', 'furniture_store', 'storage']);
 
 export interface Photo {
     height: number;

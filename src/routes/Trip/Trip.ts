@@ -53,42 +53,75 @@ tripRouter.post('/new', async (req: Request<unknown, unknown, TripGenerationInpu
   }
 });
 
+const RADIUS_MAX = 25000;
+
+interface SegmentStore {
+  startLocation: Coordinate;
+  endLocation: Coordinate;
+  timePerPart: number;
+  places: RefinedPlaces | undefined;
+}
+
 const constructTrip = async (input: TripGenerationInputs): Promise<Trip> => {
   const { startLocation, endLocation, startDate, endDate, tripName } = input;
 
-  let radius = distanceBetweenTwoCoordinates(startLocation, endLocation) * 0.75;
+  const distance = distanceBetweenTwoCoordinates(startLocation, endLocation);
+  const midPoint = getMidpointBetweenTwoCoordinates(startLocation, endLocation);
 
-  // TODO: If radius is more than 25000m, split the journey up instead of using a centre
-  radius = radius > 25000 ? 25000 : radius;
-  // not sure if 15000m should be the min radius heh
-  radius = radius < 15000 ? 15000 : radius;
+  // gets the number of splits, rounded to the nearest even number
+  const numSegments = Math.round((distance / RADIUS_MAX) * 0.5) * 2;
+  const placesPerPart: SegmentStore[] = [];
 
-  const centre = getMidpointBetweenTwoCoordinates(startLocation, endLocation);
-  const placesInput: NearbyPlacesInput = { ...centre, radius, queryByPrice: false };
-  let allPlaces: Place[] = [];
+  if (numSegments < 4) {
+    const timePerPart = roundMsUpToNearest10Minutes(endDate - startDate);
+    placesPerPart.push({ startLocation, endLocation, timePerPart, places: undefined });
+  } else if (numSegments < 8) {
+    const timePerPart = roundMsUpToNearest10Minutes((endDate - startDate) * 0.5);
+    placesPerPart.push({ startLocation, endLocation: midPoint, timePerPart, places: undefined });
+    placesPerPart.push({ startLocation: midPoint, endLocation, timePerPart, places: undefined });
+  } else { //} if (numSegments < 16) {
+    const point1 = getMidpointBetweenTwoCoordinates(startLocation, midPoint);
+    const point2 = getMidpointBetweenTwoCoordinates(midPoint, endLocation);
+    const timePerPart = roundMsUpToNearest10Minutes((endDate - startDate) * 0.25);
+    placesPerPart.push({ startLocation, endLocation: point1, timePerPart, places: undefined });
+    placesPerPart.push({ startLocation: point1, endLocation: midPoint, timePerPart, places: undefined });
+    placesPerPart.push({ startLocation: midPoint, endLocation: point2, timePerPart, places: undefined });
+    placesPerPart.push({ startLocation: point2, endLocation, timePerPart, places: undefined });
+  }
 
-  const getPlaces = async (queryByPrice: boolean, pagetoken?: string, iteration = 1) => {
-    if (iteration > 3) return;
-    let places = await getPlacesByLocation({ ...placesInput, queryByPrice, pagetoken });
+  const getPlacesForPoint = async (
+    placesSoFar: Place[], point: Coordinate, pagetoken?: string, iteration = 1
+  ): Promise<Place[]> => {
+    if (iteration > 4 || iteration > 1 && pagetoken == null) {
+      return placesSoFar;
+    }
+    let places = await getPlacesByLocation({ ...point, radius: RADIUS_MAX, queryByPrice: false, pagetoken });
     if (!isErrorResponse(places)) {
-      allPlaces = allPlaces.concat(places.results);
+      placesSoFar = placesSoFar.concat(places.results);
       if (places.next_page_token) {
-        await getPlaces(queryByPrice, places.next_page_token, iteration + 1);
+        const tempPlaces = await getPlacesForPoint(placesSoFar, point, places.next_page_token, iteration + 1);
+        placesSoFar = [...placesSoFar, ...tempPlaces];
       }
     } else if (iteration === 1) {
       // if we're on the first iteration and it fails, it means something went a bit strange
-      // probably a missing API key
+      // probably a missing/invalid API key
       throw new StatusCodeError(places.status, places.errorMessage ? places.errorMessage : "");
     }
+
+    return placesSoFar;
   }
 
-  await getPlaces(true);
-  await getPlaces(false);
+  for (let i = 0; i < placesPerPart.length; ++i) {
+    const { startLocation: partStartLocation, endLocation: partEndLocation } = placesPerPart[i];
+    const partMidPoint = getMidpointBetweenTwoCoordinates(partStartLocation, partEndLocation);
+    const places = await getPlacesForPoint([], partMidPoint);
+    const refinedPlaces: RefinedPlaces = getRefinedPlaces([...places]);
+    placesPerPart[i].places = { ...refinedPlaces };
+  }
 
-  const actual: RefinedPlaces = getRefinedPlaces(allPlaces);
 
   const initialTimeZone = getTimezone(startLocation.lat, startLocation.lng);
-  const [activities, waypoints] = generateTrip(actual, startDate, endDate, initialTimeZone);
+  const [activities, waypoints] = generateTrip(placesPerPart, startDate, endDate, initialTimeZone);
 
   let directions: DirectionsResponse[] = [];
 
@@ -182,110 +215,204 @@ const tryGetDistance = (place1: Place, place2: Place, map: Map<string, number>):
 }
 
 /**The number of milliseconds in an hour */
-const msInAnHour = 60 * 60 * 1000;
+const MS_IN_AN_HOUR = 60 * 60 * 1000;
+/** The min duration of an activity in ms */
+const MIN_ACTIVITY_DURATION = 0.5 * MS_IN_AN_HOUR;
+/** The max duration of an activity in ms */
+const MAX_ACTIVITY_DURATION = 3 * MS_IN_AN_HOUR;
 
-const generateTrip = (places: RefinedPlaces, start: number, end: number, initialTimeZone: string): [Activity[], string[]] => {
-  // do some heavy calcs so we know the distance between each location
-  const leastDistanceMap = new Map<string, number>();
-  const allplaces = [...places.nonFood, ...places.food, ...places.lodging];
+const generateTrip = (placesPerPart: SegmentStore[], start: number, end: number, initialTimeZone: string): [Activity[], string[]] => {
+  // round off start/end times
+  const startMoment = momentTz(start).tz(initialTimeZone);
+  const endMoment = momentTz(start).tz(initialTimeZone);
 
-  for (const place1 of allplaces) {
-    for (const place2 of allplaces) {
-      let result = tryGetDistance(place1, place2, leastDistanceMap);
-      if (place1.place_id !== place2.place_id && !result) {
-        // if we have no result for the distance between the two places, we'll add an entry
-        result = distanceBetweenTwoCoordinates(place1.geometry.location, place2.geometry.location);
-        leastDistanceMap.set([place1.place_id, place2.place_id].sort().join("-"), result);
-      }
-    }
-  }
+  start = roundMsUpToNearest10Minutes(start - (startMoment.hours() - 7) * MS_IN_AN_HOUR);
+  end = roundMsUpToNearest10Minutes(end + (22 - endMoment.hours()) * MS_IN_AN_HOUR);
 
+  let runningTime = start;
+  let activities: Activity[] = [];
   const placeIds = new Set<string>();
-  /** The min duration of an activity in ms */
-  const minDuration = 0.5 * msInAnHour;
-  /** The max duration of an activity in ms */
-  const maxDuration = 3 * msInAnHour;
-  const activities: Activity[] = [];
-  let time = start;
-  /** The time since the last food place was chosen in ms */
-  let timeSinceFood = 0;
+  const placeNames = new Set<string>();
 
-  let currentPlace: Place | undefined;
-  let prevPlace: Place | undefined;
-  let timezone = initialTimeZone;
-  let { food: foodPlaces, nonFood: nonFoodPlaces, lodging: lodgingPlaces } = places;
+  let timeRemainder = 0;
 
-  while (end - time >= minDuration && (foodPlaces.length > 0 || nonFoodPlaces.length > 0)) {
-    const foodPlacesLeft = foodPlaces.length > 0;
-    const nonFoodPlacesLeft = nonFoodPlaces.length > 0;
-    const lodgePlacesLeft = lodgingPlaces.length > 0;
-
-    if (currentPlace) {
-      prevPlace = { ...currentPlace };
-      timezone = getTimezone(currentPlace.geometry.location.lat, currentPlace.geometry.location.lng);
-      currentPlace = undefined;
+  for (let i = 0; i < placesPerPart.length; i++) {
+    const { startLocation, endLocation, places, timePerPart } = placesPerPart[i];
+    if (places == null) {
+      continue;
     }
+    // do some heavy calcs so we know the distance between each location
+    const leastDistanceMap = new Map<string, number>();
+    const allplaces = [...places.nonFood, ...places.food, ...places.lodging];
 
-    const randomDuration = Math.ceil(Math.random() * (maxDuration - minDuration) + minDuration);
-    let duration = roundMsUpToNearest10Minutes(randomDuration);
-    if (duration < 0) {
-      break;
-    }
-
-    // if it's after 8pm or before 7am, lets find a place to crash
-    const moment = momentTz(time).tz(timezone);
-    const hoursPast24 = moment.hours();
-    if ((hoursPast24 > 20 || hoursPast24 < 7) && lodgePlacesLeft) {
-      const result = findClosestPlace(lodgingPlaces, currentPlace, leastDistanceMap);
-      lodgingPlaces = [...result.updatedPlaces];
-      if (result.place) {
-        currentPlace = { ...result.place };
-        const extraHours = hoursPast24 < 12 ? 2 : 24 - hoursPast24;
-        duration = (7 + extraHours) * msInAnHour;
-        timeSinceFood = duration;
-      }
-    } else {
-      // if it's been a while since a meal, or if there are no nonfood places left, just choose another food place
-      if ((timeSinceFood > 3 * msInAnHour || !nonFoodPlacesLeft) && foodPlacesLeft) {
-        const result = findClosestPlace(foodPlaces, currentPlace, leastDistanceMap);
-        foodPlaces = [...result.updatedPlaces];
-        if (result.place != null) {
-          currentPlace = { ...result.place };
-          timeSinceFood = 0;
-        }
-      } else if (nonFoodPlacesLeft) {
-        const result = findClosestPlace(nonFoodPlaces, currentPlace, leastDistanceMap);
-        nonFoodPlaces = [...result.updatedPlaces];
-        if (result.place != null) {
-          currentPlace = { ...result.place };
-          timeSinceFood += duration;
+    for (const place1 of allplaces) {
+      for (const place2 of allplaces) {
+        let result = tryGetDistance(place1, place2, leastDistanceMap);
+        if (place1.place_id !== place2.place_id && !result) {
+          // if we have no result for the distance between the two places, we'll add an entry
+          result = distanceBetweenTwoCoordinates(place1.geometry.location, place2.geometry.location);
+          leastDistanceMap.set([place1.place_id, place2.place_id].sort().join("-"), result);
         }
       }
     }
 
-    if (currentPlace) {
-      // only add the place if we haven't visited it already
-      if (!placeIds.has(currentPlace.place_id)) {
-        const { types, name, rating, price_level, vicinity, place_id } = currentPlace;
-        activities.push({
-          types, name, duration, time, place_id,
-          rating: rating,
-          price: price_level,
-          location: vicinity,
-        });
+    const nonLodgingPlaces = [...places.nonFood, ...places.food];
+    let firstPlaceStart: Place | undefined;
+    let sIndex = 0;
+    let minDistFromStart = Infinity;
+    let firstPlaceEnd: Place | undefined;
+    let eIndex = 0;
+    let minDistFromEnd = Infinity;
 
-        placeIds.add(place_id);
-        time += duration;
+    for (let i = 0; i < nonLodgingPlaces.length; ++i) {
+      const distFromStart = distanceBetweenTwoCoordinates(startLocation, nonLodgingPlaces[i].geometry.location);
+      if (distFromStart < minDistFromStart) {
+        minDistFromStart = distFromStart;
+        sIndex = i;
+      }
+      const distFromEnd = distanceBetweenTwoCoordinates(endLocation, nonLodgingPlaces[i].geometry.location);
+      if (distFromEnd < minDistFromEnd) {
+        minDistFromEnd = distFromEnd;
+        eIndex = i;
+      }
+    }
 
-        if (currentPlace && prevPlace) {
-          const travelDist = tryGetDistance(currentPlace, prevPlace, leastDistanceMap)
-            || distanceBetweenTwoCoordinates(currentPlace.geometry.location, prevPlace.geometry.location);
-          // assume the time taken to travel just the total distance travelled at 50km/hr
-          const timeTravelling = roundMsUpToNearest10Minutes((travelDist / 50000) * msInAnHour);
-          time += timeTravelling;
+    firstPlaceStart = nonLodgingPlaces[sIndex];
+    firstPlaceEnd = nonLodgingPlaces[eIndex];
+
+    /** The time since the last food place was chosen in ms */
+    let timeSinceFoodStart = 0;
+    let timeSinceFoodEnd = 0;
+    // just keeps track of the last 
+    let currentPlaceStart: Place | undefined;
+    let currentPlaceEnd: Place | undefined;
+
+    let timezone = initialTimeZone;
+    let { food: foodPlaces, nonFood: nonFoodPlaces, lodging: lodgingPlaces } = places;
+    let timeFromStartMarker = 0;
+    let timeFromEndMarker = timePerPart + timeRemainder;
+    let goingStartToEnd = false;
+    const startActivities: Activity[] = [];
+    const endActivities: Activity[] = [];
+    while (timeFromEndMarker - timeFromStartMarker > MAX_ACTIVITY_DURATION && (foodPlaces.length > 0 || nonFoodPlaces.length > 0)) {
+      goingStartToEnd = !goingStartToEnd;
+      const foodPlacesLeft = foodPlaces.length > 0;
+      const nonFoodPlacesLeft = nonFoodPlaces.length > 0;
+      const lodgePlacesLeft = lodgingPlaces.length > 0;
+
+      let currentPlace: Place | undefined;
+      let prevPlace: Place | undefined;
+      let timeSinceFood = goingStartToEnd ? timeSinceFoodStart : timeSinceFoodEnd;
+
+      let duration = roundMsUpToNearest10Minutes(
+        Math.random() * (MAX_ACTIVITY_DURATION - MIN_ACTIVITY_DURATION) + MIN_ACTIVITY_DURATION
+      );
+
+      if (goingStartToEnd && firstPlaceStart) {
+        currentPlace = firstPlaceStart;
+        firstPlaceStart = undefined;
+      } else if (!goingStartToEnd && firstPlaceEnd) {
+        currentPlace = firstPlaceEnd;
+        firstPlaceEnd = undefined
+      }
+
+      if (currentPlace == null) {
+        if (goingStartToEnd && currentPlaceStart) {
+          prevPlace = { ...currentPlaceStart };
+          currentPlaceStart = undefined;
+        } else if (!goingStartToEnd && currentPlaceEnd) {
+          prevPlace = { ...currentPlaceEnd };
+          currentPlaceEnd = undefined;
+        }
+
+        if (prevPlace) {
+          timezone = getTimezone(prevPlace.geometry.location.lat, prevPlace.geometry.location.lng);
+        }
+
+        // if it's after 8pm or before 7am, lets find a place to crash
+        const moment = momentTz(
+          runningTime + (goingStartToEnd ? timeFromStartMarker : timeFromEndMarker)
+        ).tz(timezone);
+        const hoursPast24 = moment.hours();
+        if ((hoursPast24 > 20 || hoursPast24 < 7) && lodgePlacesLeft) {
+          const result = findClosestPlace(lodgingPlaces, prevPlace, leastDistanceMap);
+          lodgingPlaces = [...result.updatedPlaces];
+          if (result.place) {
+            currentPlace = { ...result.place };
+            const extraHours = hoursPast24 < 12 ? 2 : 24 - hoursPast24;
+            duration = (7 + extraHours) * MS_IN_AN_HOUR;
+            timeSinceFood = duration;
+          }
+        } else {
+          // if it's been a while since a meal, or if there are no nonfood places left, just choose another food place
+          if ((timeSinceFood > 3 * MS_IN_AN_HOUR || !nonFoodPlacesLeft) && foodPlacesLeft) {
+            const result = findClosestPlace(foodPlaces, prevPlace, leastDistanceMap);
+            foodPlaces = [...result.updatedPlaces];
+            if (result.place != null) {
+              currentPlace = { ...result.place };
+              timeSinceFood = 0;
+            }
+          } else if (nonFoodPlacesLeft) {
+            const result = findClosestPlace(nonFoodPlaces, prevPlace, leastDistanceMap);
+            nonFoodPlaces = [...result.updatedPlaces];
+            if (result.place != null) {
+              currentPlace = { ...result.place };
+              timeSinceFood += duration;
+            }
+          }
+        }
+      }
+
+      if (currentPlace) {
+        // only add the place if we haven't visited it already
+        if (!placeIds.has(currentPlace.place_id) && !placeNames.has(currentPlace.name)) {
+          const { types, name, rating, price_level, vicinity, place_id, plus_code } = currentPlace;
+          placeIds.add(place_id);
+          placeNames.add(name);
+
+          let timeTravelling = 0;
+          if (currentPlace && prevPlace) {
+            const travelDist = tryGetDistance(currentPlace, prevPlace, leastDistanceMap)
+              || distanceBetweenTwoCoordinates(currentPlace.geometry.location, prevPlace.geometry.location);
+            // assume the time taken to travel just the total distance travelled at 50km/hr
+            timeTravelling = roundMsUpToNearest10Minutes((travelDist / 50000) * MS_IN_AN_HOUR);
+          }
+
+          const time =
+            runningTime + (goingStartToEnd ? timeFromStartMarker : timeFromEndMarker - (duration + timeTravelling));
+          // plus_code.compound_code looks like 
+          const generalLocation = plus_code?.compound_code ?
+            plus_code.compound_code.substring(plus_code.compound_code.indexOf(" ") + 1) : "";
+          const activity: Activity = {
+            types,
+            name,
+            duration,
+            time,
+            place_id,
+            rating,
+            price: price_level,
+            location: vicinity,
+            generalLocation
+          };
+
+          if (goingStartToEnd) {
+            startActivities.push(activity);
+            currentPlaceStart = { ...currentPlace };
+            timeFromStartMarker += (duration + timeTravelling);
+            timeSinceFoodStart = timeSinceFood;
+          } else {
+            endActivities.push(activity);
+            currentPlaceEnd = { ...currentPlace };
+            timeFromEndMarker -= (duration + timeTravelling);
+            timeSinceFoodEnd = timeSinceFood;
+          }
         }
       }
     }
+
+    timeRemainder = timeFromEndMarker - timeFromStartMarker > 0 ? timeFromEndMarker - timeFromStartMarker : 0;
+    runningTime += timeFromStartMarker;
+    activities = [...activities, ...startActivities, ...endActivities.reverse()];
   }
 
   return [activities, Array.from(placeIds)];
